@@ -30,6 +30,8 @@ async function run() {
 
     try {
         const categoriesCollection = client.db("ExpenseTrackerDB").collection("categories");
+        const fundsCollection = client.db("ExpenseTrackerDB").collection("funds");
+        const costsCollection = client.db("ExpenseTrackerDB").collection("costs");
 
 
 
@@ -73,6 +75,11 @@ async function run() {
         })
 
 
+
+
+
+
+
         // post categories
 
 
@@ -97,25 +104,56 @@ async function run() {
 
 
 
-        /*       app.put('/categories/:name', async (req, res) => {
-                  const name = req.params.email;
-                  const user = req.body;
-                  const filter = { name: name };
-                  const options = { upsert: true }
-                  const updateDoc = {
-                      $set: user,
-                  }
-                  const result = await usersCollection.updateOne(filter, updateDoc, options);
-      
-                  console.log(result)
-      
-                  const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
-                      expiresIn: '7d'
-                  })
-                  console.log(token)
-                  res.send({ result, token })
-              }) */
+        app.put('/categories/:name', async (req, res) => {
+            const name = req.params.name;
+            const user = req.body;
+            const filter = { name: name };
+            const options = { upsert: true }
+            const updateDoc = {
+                $set: user,
+            }
+            const result = await categoriesCollection.updateOne(filter, updateDoc, options);
 
+            // console.log(result)
+
+            res.send(result);
+        })
+
+
+        // post new funds
+
+        app.post('/funds', async (req, res) => {
+            const category = req.body;
+            const result = await fundsCollection.insertOne(category);
+            res.send(result);
+        })
+
+        // get all funds
+
+
+        app.get('/funds', async (req, res) => {
+            const query = {};
+            const result = await fundsCollection.find(query).toArray();
+            res.send(result);
+        })
+
+
+        // post new costs
+
+        app.post('/costs', async (req, res) => {
+            const category = req.body;
+            const result = await costsCollection.insertOne(category);
+            res.send(result);
+        })
+
+        // get all costs
+
+
+        app.get('/costs', async (req, res) => {
+            const query = {};
+            const result = await costsCollection.find(query).toArray();
+            res.send(result);
+        })
 
 
 
