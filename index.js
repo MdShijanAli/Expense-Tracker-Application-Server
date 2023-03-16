@@ -52,7 +52,7 @@ async function run() {
 
         app.get('/blogs/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { '_id': new ObjectId(id) };
+            const query = { _id: new ObjectId(id) };
             const blog = await blogsCollection.findOne(query);
             res.send(blog);
         })
@@ -68,7 +68,7 @@ async function run() {
 
         app.get('/categories/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { ' _id': new ObjectId(id) };
+            const query = { _id: new ObjectId(id) };
             const category = await categoriesCollection.findOne(query);
             res.send(category);
 
@@ -94,20 +94,20 @@ async function run() {
 
         app.delete('/categories/:id', async (req, res) => {
             const id = req.params.id;
-            const filter = { ' _id': new ObjectId(id) }
+            const filter = { _id: new ObjectId(id) }
             const result = await categoriesCollection.deleteOne(filter);
             res.send(result);
         })
 
         app.delete('/funds/:id', async (req, res) => {
             const id = req.params.id;
-            const filter = { '_id': new ObjectId(id) }
+            const filter = { _id: new ObjectId(id) }
             const result = await fundsCollection.deleteOne(filter);
             res.send(result);
         })
         app.delete('/costs/:id', async (req, res) => {
             const id = req.params.id;
-            const filter = { '_id': new ObjectId(id) }
+            const filter = { _id: new ObjectId(id) }
             const result = await costsCollection.deleteOne(filter);
             res.send(result);
         })
