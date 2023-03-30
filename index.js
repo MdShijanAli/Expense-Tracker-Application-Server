@@ -118,11 +118,18 @@ async function run() {
         // get category name data
 
 
+        app.get('/funds/:category', async (req, res) => {
+            const category = req.params.category;
+            const filter = { category: category }
+            const result = await fundsCollection.find(filter).toArray();
+            res.send(result);
+        })
+
 
         // delete category all data
 
 
-        app.delete('/funds/:category', async (req, res) => {
+        app.delete('/fund/:category', async (req, res) => {
             const category = req.params.category; // fixed
             console.log(category);
             const filter = { category: category };
@@ -132,19 +139,16 @@ async function run() {
 
 
 
-        app.delete('/costs/:category', async (req, res) => {
+
+        app.delete('/cost/:category', async (req, res) => {
             const category = req.params.category;
+            console.log(category);
             const filter = { category: category };
             const result = await costsCollection.deleteMany(filter);
             res.send(result);
         });
 
-        app.get('/funds/:category', async (req, res) => {
-            const category = req.params.category;
-            const filter = { category: category }
-            const result = await fundsCollection.find(filter).toArray();
-            res.send(result);
-        })
+
 
         app.get('/costs/:category', async (req, res) => {
             const category = req.params.category;
