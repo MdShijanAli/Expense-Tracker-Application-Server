@@ -33,7 +33,6 @@ async function run() {
         const costsCollection = client.db("ExpenseTrackerDB").collection("costs");
 
 
-
         app.get('/blogs', async (req, res) => {
             const query = {};
             const cursor = blogsCollection.find(query);
@@ -129,10 +128,11 @@ async function run() {
         // delete category all data
 
 
-        app.delete('/fund/:category', async (req, res) => {
+        app.delete('/fund/:category/:email', async (req, res) => {
             const category = req.params.category; // fixed
-            console.log(category);
-            const filter = { category: category };
+            const user = req.body.email;
+            console.log(user);
+            const filter = { category: category, user: user };
             const result = await fundsCollection.deleteMany(filter);
             res.send(result);
         });
@@ -162,13 +162,14 @@ async function run() {
 
 
 
-        app.put('/categories/:name', async (req, res) => {
+        app.put('/categories/:name/:user', async (req, res) => {
             const name = req.params.name;
-            const user = req.body;
-            const filter = { name: name };
+            const user = req.params.user;
+            const value = req.body;
+            const filter = { name: name, user: user };
             const options = { upsert: true }
             const updateDoc = {
-                $set: user,
+                $set: value,
             }
             const result = await categoriesCollection.updateOne(filter, updateDoc, options);
 
