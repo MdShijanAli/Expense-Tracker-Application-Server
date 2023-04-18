@@ -128,9 +128,19 @@ async function run() {
         // delete category all data
 
 
-        app.delete('/fund/:category/:email', async (req, res) => {
+        app.get('/fund/:category/:user', async (req, res) => {
             const category = req.params.category; // fixed
-            const user = req.body.email;
+            const user = req.params.user;
+            console.log(user);
+            const filter = { category: category, user: user };
+            const result = await fundsCollection.find(filter).toArray();
+            res.send(result);
+        });
+
+
+        app.delete('/fund/:category/:user', async (req, res) => {
+            const category = req.params.category; // fixed
+            const user = req.params.user;
             console.log(user);
             const filter = { category: category, user: user };
             const result = await fundsCollection.deleteMany(filter);
@@ -139,11 +149,22 @@ async function run() {
 
 
 
+        app.get('/cost/:category/:user', async (req, res) => {
+            const category = req.params.category; // fixed
+            const user = req.params.user;
+            console.log(user);
+            const filter = { category: category, user: user };
+            const result = await costsCollection.find(filter).toArray();
+            res.send(result);
+        });
 
-        app.delete('/cost/:category', async (req, res) => {
-            const category = req.params.category;
-            console.log(category);
-            const filter = { category: category };
+
+
+        app.delete('/cost/:category/:user', async (req, res) => {
+            const category = req.params.category; // fixed
+            const user = req.params.user;
+            console.log(user);
+            const filter = { category: category, user: user };
             const result = await costsCollection.deleteMany(filter);
             res.send(result);
         });
