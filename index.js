@@ -124,6 +124,25 @@ async function run() {
             res.send(result);
         })
 
+        // get categories from email
+
+        app.get('/fundss/:user', async (req, res) => {
+            const user = req.params.user;
+            const filter = { user: user }
+            const result = (await fundsCollection.find(filter).sort({ "_id": -1 }).toArray());
+            res.send(result);
+        })
+
+
+        // get categories from email
+
+        app.get('/costss/:user', async (req, res) => {
+            const user = req.params.user;
+            const filter = { user: user }
+            const result = (await costsCollection.find(filter).sort({ "_id": -1 }).toArray());
+            res.send(result);
+        })
+
 
         // delete category all data
 
