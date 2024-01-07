@@ -10,18 +10,10 @@ require('dotenv').config();
 app.use(cors());
 app.use(express.json());
 
-// portfolioDB
-// ca5cukvCSsHTSqZm
 
 
-
-
-
-
-const uri = "mongodb+srv://expenseTrackerDB:shyjGcvbrJcfotOM@cluster0.jqheb6c.mongodb.net/?retryWrites=true&w=majority";
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.jqheb6c.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-
-
 
 
 
@@ -58,7 +50,7 @@ async function run() {
 
         app.get('/categories', async (req, res) => {
             const query = {};
-            const result = await categoriesCollection.find(query).toArray();
+            const result = await categoriesCollection.find(query).sort({name: 1}).toArray();
             res.send(result);
 
         })
@@ -71,10 +63,6 @@ async function run() {
             res.send(category);
 
         })
-
-
-
-
 
 
 
@@ -265,9 +253,6 @@ async function run() {
 
 }
 run().catch(err => console.log(err));
-
-
-
 
 
 
