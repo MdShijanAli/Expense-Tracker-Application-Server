@@ -105,21 +105,21 @@ async function run() {
         // get category name data
 
 
-        app.get('/funds/:category', async (req, res) => {
-            const category = req.params.category;
-            const filter = { category: category }
-            const result = await fundsCollection.find(filter).toArray();
-            res.send(result);
-        })
+        // app.get('/funds/:category', async (req, res) => {
+        //     const category = req.params.category;
+        //     const filter = { category: category }
+        //     const result = await fundsCollection.find(filter).toArray();
+        //     res.send(result);
+        // })
 
         // get categories from email
 
-        app.get('/fundss/:user', async (req, res) => {
-            const user = req.params.user;
-            const filter = { user: user }
-            const result = (await fundsCollection.find(filter).sort({ "_id": -1 }).toArray());
-            res.send(result);
-        })
+        // app.get('/fundss/:user', async (req, res) => {
+        //     const user = req.params.user;
+        //     const filter = { user: user }
+        //     const result = (await fundsCollection.find(filter).sort({ "_id": -1 }).toArray());
+        //     res.send(result);
+        // })
 
         // get current year all months funds
         
@@ -219,14 +219,14 @@ async function run() {
         // delete category all data
 
 
-        app.get('/fund/:category/:user', async (req, res) => {
-            const category = req.params.category; // fixed
-            const user = req.params.user;
-            console.log(user);
-            const filter = { category: category, user: user };
-            const result = await fundsCollection.find(filter).toArray();
-            res.send(result);
-        });
+        // app.get('/fund/:category/:user', async (req, res) => {
+        //     const category = req.params.category; // fixed
+        //     const user = req.params.user;
+        //     console.log(user);
+        //     const filter = { category: category, user: user };
+        //     const result = await fundsCollection.find(filter).toArray();
+        //     res.send(result);
+        // });
 
 
         app.delete('/fund/:category/:user', async (req, res) => {
@@ -302,11 +302,11 @@ async function run() {
         // get all funds
 
 
-        app.get('/funds', async (req, res) => {
-            const query = {};
-            const result = await fundsCollection.find(query).toArray();
-            res.send(result);
-        })
+        // app.get('/funds', async (req, res) => {
+        //     const query = {};
+        //     const result = await fundsCollection.find(query).toArray();
+        //     res.send(result);
+        // })
 
 
         // post new costs
