@@ -85,12 +85,12 @@ async function run() {
         //     res.send(result);
         // })
 
-        app.delete('/funds/:id', async (req, res) => {
-            const id = req.params;
-            const filter = { _id: new ObjectId(id) }
-            const result = await fundsCollection.deleteOne(filter);
-            res.send(result);
-        })
+        // app.delete('/funds/:id', async (req, res) => {
+        //     const id = req.params;
+        //     const filter = { _id: new ObjectId(id) }
+        //     const result = await fundsCollection.deleteOne(filter);
+        //     res.send(result);
+        // })
 
 
 

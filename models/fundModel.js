@@ -30,6 +30,20 @@ class FundModal {
     }
   }
 
+  // Delete Fund By ID
+  async deleteFundByID(id) {
+    try {
+      await connection.connect();
+      const collection = connection.db(process.env.DB_NAME).collection("funds");
+      const funds = await collection.deleteOne({ _id: new ObjectId(id) });
+      return funds
+    } catch (err) {
+      console.log('Error', err);
+    } finally {
+      await connection.close();
+    }
+  }
+
   // Get Fund By User Email
   async getFundsByUserEmail(userEmail) {
     try {
@@ -58,6 +72,23 @@ class FundModal {
     }
   }
 
+  // Delete a Fund Category for a User
+  async deleteFundsCategoryByUser(category, user) {
+    try {
+      await connection.connect();
+      const collection = connection.db(process.env.DB_NAME).collection("funds");
+      console.log('Category Model: ', category, 'User: ', user);
+      const result = await collection.deleteMany({ category: category, user: user });
+      return result.deletedCount; // Return the number of documents deleted
+    } catch (err) {
+      console.log('Error', err);
+      throw err; // Rethrow the error to be caught in the controller
+    } finally {
+      await connection.close();
+    }
+  }
+
+
   // Get Fund By Date
   async getFundsByDate(startDate, endDate) {
     try {
@@ -80,11 +111,12 @@ class FundModal {
 
 
   // Get Fund Category for specific user
-  async getFundsByCategoryAndUser(category, userEmail) {
+  async getFundsByCategoryAndUser(category, user) {
     try {
       await connection.connect();
       const collection = connection.db(process.env.DB_NAME).collection("funds");
-      const funds = await collection.find({ category: category, user: userEmail }).sort({ _id: -1 }).toArray();
+      console.log('User:', user, 'Category:', category);
+      const funds = await collection.find({ category: category, user: user }).sort({ _id: -1 }).toArray();
       return funds
     } catch (err) {
       console.log('Error', err);

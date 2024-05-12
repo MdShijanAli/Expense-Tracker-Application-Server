@@ -12,10 +12,13 @@ router.delete('/api/categories/:id', CategoryController.deleteCategoryByID);
 
 // Funds
 router.get('/api/funds', FundsController.getAllFunds);
-router.get('/api/funds/:id', FundsController.getFundByID);
-router.get('/api/user-funds/:user', FundsController.getFundsByUserEmail);
-router.get('/api/category-funds/:category', FundsController.getFundsByCategory);
+router.get('/api/fund/:id', FundsController.getFundByID);
+router.get('/api/funds/:user', FundsController.getFundsByUserEmail);
+router.get('/api/funds-category', FundsController.getFundsByCategory);
 router.get('/api/date-funds', FundsController.getFundsByDate);
-router.get('/api/user-funds/:category/:user', FundsController.getFundsByCategoryAndUser);
+router.get('/api/user-category', FundsController.getFundsByCategoryAndUser);
+router.get('/api/user-category-balance/:user', FundsController.getFundCategoryWithValue);
+router.delete('/api/fund/:id', FundsController.deleteFundByID);
+router.delete('/api/delete-funds-category', FundsController.deleteFundsCategoryByUser);
 
 module.exports = router;
