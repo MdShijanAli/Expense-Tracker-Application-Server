@@ -126,6 +126,30 @@ class FundModal {
   }
 
 
+  async getFundCategoryWithValue(user) {
+    try {
+      await connection.connect();
+      const collection = connection.db(process.env.DB_NAME).collection("funds");
+
+      // MongoDB aggregation pipeline
+      const pipeline = [
+        { $match: { user: user } },  // Filter documents by user
+        { $group: { _id: "$category", value: { $sum: "$money" } } },
+        { $project: { name: "$_id", value: 1, _id: 0 } } // Group by category and calculate total money
+      ];
+
+      const funds = await collection.aggregate(pipeline).sort({ name: 1 }).toArray();
+      return funds;
+    } catch (err) {
+      console.error('Error:', err);
+      throw err; // Rethrow error to handle it in the calling function
+    } finally {
+      await connection.close();
+    }
+  }
+
+
+
 
 }
 

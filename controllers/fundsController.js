@@ -215,43 +215,25 @@ class FundsController {
     }
 
     try {
-      const result = await fundModel.getFundsByUserEmail(userEmail);
-      if (result?.length > 0) {
-        // Create an object to store aggregated data
-        const aggregatedData = {};
-
-        // Iterate over the data array
-        result.forEach(item => {
-          // Check if the category already exists in the aggregatedData object
-          if (aggregatedData.hasOwnProperty(item.category)) {
-            // If category exists, add the money to its total
-            aggregatedData[item.category] += item.money;
-          } else {
-            // If category does not exist, initialize it with the money
-            aggregatedData[item.category] = item.money;
-          }
-        });
-
-        // Create an array of objects containing category name and total money
-        const resultArray = Object.keys(aggregatedData).map(category => ({
-          category: category,
-          money: aggregatedData[category]
-        }));
+      const result = await fundModel.getFundCategoryWithValue(userEmail);
+      if (result.length > 0) {
         res.json({
           status: 'success', message: 'Executed Successfully', results: {
-            total: resultArray?.length,
-            totalAmount: resultArray?.map((fund) => fund.money)?.reduce((p, n) => p + n, 0),
-            data: resultArray
+            total: result?.length,
+            totalAmount: result?.map((fund) => fund.value)?.reduce((p, n) => p + n, 0),
+            data: result
           }
         });
       } else {
         res.status(404).json({ status: 'not found', message: 'Fund not found' });
       }
     } catch (err) {
-      console.error('Error getting Fund By ID:', err);
+      console.error('Error getting Fund By User:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   }
+
+
 
 }
 
