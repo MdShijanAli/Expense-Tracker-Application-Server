@@ -1,6 +1,50 @@
 const FundModal = require("../models/fundModel")
 
 class FundsController {
+  // Post  a FUnd
+  async createFund(req, res) {
+    const fundModel = new FundModal();
+    const value = req.body;
+    try {
+      const result = await fundModel.createFund(value);
+      const createdID = result?.insertedId;
+      if (createdID) {
+        const createdFund = await fundModel.getFundByID(createdID);
+        res.json({
+          status: 'success',
+          message: 'Executed Successfully',
+          results: createdFund
+        });
+      }
+    } catch (err) {
+      console.error('Error Posting Funds:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
+  // Update a FUnd
+  async updateFundByID(req, res) {
+    const fundModel = new FundModal();
+    const { id } = req.query
+    const value = req.body;
+    try {
+      const result = await fundModel.updateFundByID(id, value);
+      if (result) {
+        const updatedFund = await fundModel.getFundByID(id);
+        res.json({
+          status: 'success',
+          message: 'Executed Successfully',
+          results: updatedFund
+        });
+      }
+
+    } catch (err) {
+      console.error('Error Posting Funds:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
+
   // Get All Funds
   async getAllFunds(req, res) {
     const fundModel = new FundModal();

@@ -293,11 +293,11 @@ async function run() {
 
         // post new funds
 
-        app.post('/funds', async (req, res) => {
-            const category = req.body;
-            const result = await fundsCollection.insertOne(category);
-            res.send(result);
-        })
+        // app.post('/funds', async (req, res) => {
+        //     const category = req.body;
+        //     const result = await fundsCollection.insertOne(category);
+        //     res.send(result);
+        // })
 
         // get all funds
 

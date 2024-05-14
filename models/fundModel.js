@@ -2,6 +2,39 @@ const connection = require("../config/database");
 const { ObjectId } = require('mongodb');
 
 class FundModal {
+  // Post a Fund
+  async createFund(value) {
+    try {
+      await connection.connect();
+      const collection = connection.db(process.env.DB_NAME).collection("funds");
+      const funds = await collection.insertOne(value);
+      return funds
+    } catch (err) {
+      console.log('Error', err);
+    } finally {
+      await connection.close();
+    }
+  }
+
+  // Update a Fund
+  async updateFundByID(id, value) {
+    try {
+      await connection.connect();
+      const collection = connection.db(process.env.DB_NAME).collection("funds");
+      console.log("ID", id, "Value: ", value);
+      const filter = { _id: id }
+      const updateDoc = {
+        $set: value
+      }
+      const funds = await collection.updateOne(filter, updateDoc);
+      return funds
+    } catch (err) {
+      console.log('Error', err);
+    } finally {
+      await connection.close();
+    }
+  }
+
   // Get All FUnds
   async getAllFunds() {
     try {
@@ -134,8 +167,7 @@ class FundModal {
       // MongoDB aggregation pipeline
       const pipeline = [
         { $match: { user: user } },  // Filter documents by user
-        { $group: { _id: "$category", value: { $sum: "$money" } } },
-        { $project: { name: "$_id", value: 1, _id: 0 } } // Group by category and calculate total money
+        { $group: { _id: "$category", name: { $first: "$category" }, value: { $sum: "$money" } } },
       ];
 
       const funds = await collection.aggregate(pipeline).sort({ name: 1 }).toArray();

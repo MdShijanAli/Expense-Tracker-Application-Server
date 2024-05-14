@@ -11,6 +11,8 @@ router.get('/api/categories/:id', CategoryController.getCategoryByID);
 router.delete('/api/categories/:id', CategoryController.deleteCategoryByID);
 
 // Funds
+router.post('/api/funds', FundsController.createFund);
+router.put('/api/funds/update', FundsController.updateFundByID);
 router.get('/api/funds', FundsController.getAllFunds);
 router.get('/api/fund/:id', FundsController.getFundByID);
 router.get('/api/funds/:user', FundsController.getFundsByUserEmail);
