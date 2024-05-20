@@ -320,11 +320,11 @@ async function run() {
         // get all costs
 
 
-        app.get('/costs', async (req, res) => {
+        /* app.get('/costs', async (req, res) => {
             const query = {};
             const result = await costsCollection.find(query).toArray();
             res.send(result);
-        })
+        }) */
 
 
 

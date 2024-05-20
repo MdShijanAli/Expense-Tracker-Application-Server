@@ -1,6 +1,7 @@
 const express = require('express');
 const CategoryController = require('../controllers/categoryController');
-const FundsController = require('../controllers/fundsController')
+const FundsController = require('../controllers/fundsController');
+const costController = require('../controllers/costController')();
 
 const router = express.Router();
 
@@ -22,5 +23,10 @@ router.get('/api/user-category', FundsController.getFundsByCategoryAndUser);
 router.get('/api/user-category-balance/:user', FundsController.getFundCategoryWithValue);
 router.delete('/api/fund/:id', FundsController.deleteFundByID);
 router.delete('/api/delete-funds-category', FundsController.deleteFundsCategoryByUser);
+
+// Costs
+router.get('/api/costs', costController.getAllCosts);
+router.get('/api/costs/details/:id', costController.getCostByID);
+router.delete('/api/costs', costController.deleteCostByID);
 
 module.exports = router;
