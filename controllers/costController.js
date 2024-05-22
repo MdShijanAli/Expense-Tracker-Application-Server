@@ -1,6 +1,27 @@
+const formatResultData = require('../utils/formatResultsData');
 const costModel = require('./../models/costModel')();
 
 function costController() {
+
+  // Post  a FUnd
+  const createCost = async (req, res) => {
+    const value = req.body;
+    try {
+      const result = await costModel.createCost(value);
+      const createdID = result?.insertedId;
+      if (createdID) {
+        const createdCost = await costModel.getCostByID(createdID);
+        res.json({
+          status: 'success',
+          message: 'Executed Successfully',
+          results: createdCost
+        });
+      }
+    } catch (err) {
+      console.error('Error Inserting Cost:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
 
   // Get All Funds
   const getAllCosts = async (req, res) => {
@@ -9,54 +30,18 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getAllCosts(pageNum, limitNum);
-      const total = result.total;
-      const totalPages = Math.ceil(total / limitNum);
+      const total = result?.total?.length;
 
-      const links = [
-        {
-          url: pageNum > 1 ? `${ process.env.API_URL }/api/costs?page=${ pageNum - 1 }` : null,
-          label: "Previous",
-          active: false
-        },
-        {
-          url: `${ process.env.API_URL }/api/costs?page=1`,
-          label: "1",
-          active: pageNum === 1
-        }
-      ];
+      formatResultData({
+        res,
+        total,
+        limitNum,
+        pageNum,
+        apiEndPoint: 'costs',
+        result: result?.costs,
+        totalResults: total
+      })
 
-      for (let i = 2; i <= totalPages; i++) {
-        links.push({
-          url: `${ process.env.API_URL }/api/costs?page=${ i }`,
-          label: `${ i }`,
-          active: pageNum === i
-        });
-      }
-
-      links.push({
-        url: pageNum < totalPages ? `${ process.env.API_URL }/api/costs?page=${ pageNum + 1 }` : null,
-        label: "Next",
-        active: false
-      });
-
-      res.json({
-        status: 'success',
-        message: 'Executed Successfully',
-        results: {
-          total: result?.costs?.length,
-          totalAmount: result?.costs?.map((fund) => fund.money)?.reduce((p, n) => p + n, 0),
-          data: result?.costs,
-          first_page_url: `${ process.env.API_URL }/api/costs?page=1`,
-          last_page_url: `${ process.env.API_URL }/api/costs?page=${ totalPages }`,
-          prev_page_url: pageNum !== 1 ? `${ process.env.API_URL }/api/costs?page=${ pageNum - 1 }` : null,
-          links: links,
-          next_page_url: pageNum < totalPages ? `${ process.env.API_URL }/api/costs?page=${ pageNum + 1 }` : null,
-          current_page: pageNum,
-          last_page: totalPages,
-          totalPages: totalPages,
-          per_page: limit
-        }
-      });
     } catch (err) {
       console.error('Error getting Costs:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
@@ -105,10 +90,155 @@ function costController() {
     }
   }
 
+  // Get Costs By User Email
+  const getCostsByUserEmail = async (req, res) => {
+    const { user: userEmail, page = 1, limit = 20 } = req.query;
+
+    if (!userEmail) {
+      return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
+    }
+
+    console.log("UserEmail: ", userEmail, 'Page: ', 1, 'Limit: ', limit);
+
+    try {
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await costModel.getCostsByUserEmail(userEmail, pageNum, limitNum);
+      const total = result?.total?.length;
+      if (result?.costs.length > 0) {
+        formatResultData({
+          res,
+          total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'costs/user-costs',
+          queryString: `user=${ userEmail }`,
+          result: result?.costs,
+          totalResults: total
+        })
+      } else {
+        res.status(404).json({ status: 'not found', message: 'Costs not found' });
+      }
+    } catch (err) {
+      console.error('Error getting Cost By User Email:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
+  // Get Costs By User Email
+  const getCostsByCategory = async (req, res) => {
+    const { category_name: category, page = 1, limit = 20 } = req.query;
+
+    if (!category) {
+      return res.status(400).json({ status: 'error', message: 'Category Name is required' });
+    }
+
+    console.log("category: ", category, 'Page: ', 1, 'Limit: ', limit);
+
+    try {
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await costModel.getCostsByCategory(category, pageNum, limitNum);
+      const total = result?.total?.length;
+      if (result?.costs.length > 0) {
+        formatResultData({
+          res,
+          total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'costs/cost-category',
+          queryString: `category_name=${ category }`,
+          result: result?.costs,
+          totalResults: total
+        })
+      } else {
+        res.status(404).json({ status: 'not found', message: 'Costs not found' });
+      }
+    } catch (err) {
+      console.error('Error getting Cost By This Category:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
+
+  // Get Costs Category By User Email
+  const getCostsByCategoryByUser = async (req, res) => {
+    const { category_name: category, user: userEmail, page = 1, limit = 20 } = req.query;
+
+    if (!category && !userEmail) {
+      return res.status(400).json({ status: 'error', message: 'Category Name and Email is required' });
+    }
+
+    console.log("category: ", category, 'Page: ', 1, 'Limit: ', limit);
+
+    try {
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await costModel.getCostsByCategoryByUser(category, userEmail, pageNum, limitNum);
+      const total = result?.total?.length;
+      if (result?.costs.length > 0) {
+        formatResultData({
+          res,
+          total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'costs/user-cost-category',
+          queryString: `category_name=${ category }&user=${ userEmail }`,
+          result: result?.costs,
+          totalResults: total
+        })
+      } else {
+        res.status(404).json({ status: 'not found', message: 'Costs not found' });
+      }
+    } catch (err) {
+      console.error('Error getting Cost By This Category:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
+  // Get a user all category name and Money
+  const getCostCategoryWithValue = async (req, res) => {
+    const { user: userEmail, page = 1, limit = 20 } = req.query;
+
+    if (!userEmail) {
+      return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
+    }
+
+    try {
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await costModel.getCostCategoryWithValue(userEmail, pageNum, limitNum);
+      const total = result?.total?.length;
+      if (result?.costs.length > 0) {
+        formatResultData({
+          res,
+          total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'costs/user-all-cost-category/lists',
+          queryString: `user=${ userEmail }`,
+          result: result?.costs,
+          totalResults: total
+        })
+      } else {
+        res.status(404).json({ status: 'not found', message: 'Cost not found' });
+      }
+    } catch (err) {
+      console.error('Error getting Fund By User:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
+
   return {
+    createCost,
     getAllCosts,
     getCostByID,
-    deleteCostByID
+    deleteCostByID,
+    getCostsByUserEmail,
+    getCostsByCategory,
+    getCostsByCategoryByUser,
+    getCostCategoryWithValue
   }
 }
 

@@ -4,6 +4,11 @@ const { ObjectId } = require('mongodb');
 class FundModal {
   // Post a Fund
   async createFund(value) {
+    const timestamp = new Date();  // Get the current timestamp
+
+    // Add the `created_at` and `updated_at` fields to the value object
+    value.created_at = timestamp;
+    value.updated_at = timestamp;
     try {
       await connection.connect();
       const collection = connection.db(process.env.DB_NAME).collection("funds");
@@ -18,6 +23,10 @@ class FundModal {
 
   // Update a Fund
   async updateFundByID(id, value) {
+    const timestamp = new Date();
+
+    // Add `updated_at` field to the value object
+    value.updated_at = timestamp;
     try {
       await connection.connect();
       const collection = connection.db(process.env.DB_NAME).collection("funds");

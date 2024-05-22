@@ -208,12 +208,12 @@ async function run() {
 
         // get categories from email
 
-        app.get('/costss/:user', async (req, res) => {
-            const user = req.params.user;
-            const filter = { user: user }
-            const result = (await costsCollection.find(filter).sort({ "_id": -1 }).toArray());
-            res.send(result);
-        })
+        // app.get('/costss/:user', async (req, res) => {
+        //     const user = req.params.user;
+        //     const filter = { user: user }
+        //     const result = (await costsCollection.find(filter).sort({ "_id": -1 }).toArray());
+        //     res.send(result);
+        // })
 
 
         // delete category all data
@@ -262,12 +262,12 @@ async function run() {
 
 
 
-        app.get('/costs/:category', async (req, res) => {
-            const category = req.params.category;
-            const filter = { category: category }
-            const result = await costsCollection.find(filter).toArray();
-            res.send(result);
-        })
+        // app.get('/costs/:category', async (req, res) => {
+        //     const category = req.params.category;
+        //     const filter = { category: category }
+        //     const result = await costsCollection.find(filter).toArray();
+        //     res.send(result);
+        // })
 
 
         // update value
@@ -311,11 +311,11 @@ async function run() {
 
         // post new costs
 
-        app.post('/costs', async (req, res) => {
-            const category = req.body;
-            const result = await costsCollection.insertOne(category);
-            res.send(result);
-        })
+        // app.post('/costs', async (req, res) => {
+        //     const category = req.body;
+        //     const result = await costsCollection.insertOne(category);
+        //     res.send(result);
+        // })
 
         // get all costs
 

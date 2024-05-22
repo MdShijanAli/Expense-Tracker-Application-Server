@@ -25,8 +25,13 @@ router.delete('/api/fund/:id', FundsController.deleteFundByID);
 router.delete('/api/delete-funds-category', FundsController.deleteFundsCategoryByUser);
 
 // Costs
+router.post('/api/costs', costController.createCost);
 router.get('/api/costs', costController.getAllCosts);
 router.get('/api/costs/details/:id', costController.getCostByID);
+router.get('/api/costs/user-costs', costController.getCostsByUserEmail);
+router.get('/api/costs/cost-category', costController.getCostsByCategory);
+router.get('/api/costs/user-cost-category', costController.getCostsByCategoryByUser);
+router.get('/api/costs/user-all-cost-category/lists', costController.getCostCategoryWithValue);
 router.delete('/api/costs', costController.deleteCostByID);
 
 module.exports = router;
