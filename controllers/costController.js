@@ -23,6 +23,27 @@ function costController() {
     }
   }
 
+  // Update a FUnd
+  const updateCostByID = async (req, res) => {
+    const id = req.params.id
+    const value = req.body;
+    try {
+      const result = await costModel.updateCostByID(id, value);
+      if (result) {
+        const updatedCost = await costModel.getCostByID(id);
+        res.json({
+          status: 'success',
+          message: 'Executed Successfully',
+          results: updatedCost
+        });
+      }
+
+    } catch (err) {
+      console.error('Error Posting Cost:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
   // Get All Funds
   const getAllCosts = async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
@@ -98,12 +119,11 @@ function costController() {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
     }
 
-    console.log("UserEmail: ", userEmail, 'Page: ', 1, 'Limit: ', limit);
-
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostsByUserEmail(userEmail, pageNum, limitNum);
+      console.log('Result: ', result);
       const total = result?.total?.length;
       if (result?.costs.length > 0) {
         formatResultData({
@@ -229,16 +249,75 @@ function costController() {
     }
   }
 
+  // Delete Category for a User
+  const deleteCostCategoryByUser = async (req, res) => {
+    const { category, user } = req.query;
+
+    console.log('Category: ', category, 'User: ', user);
+    if (!category || !user) { // Check for category and user
+      return res.status(400).json({ status: 'error', message: 'Category and User Email are required' });
+    }
+
+    try {
+      const deletedCount = await costModel.deleteCostCategoryByUser(category, user);
+      if (deletedCount > 0) {
+        res.json({ status: 'success', message: 'Executed Successfully', deletedCount: deletedCount });
+      } else {
+        res.status(404).json({ status: 'not found', message: 'No Costs for the specified category and user' });
+      }
+    } catch (err) {
+      console.error('Error deleting Cost Category:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
+
+  // Get FUnds By Date
+  const getCostsByDate = async (req, res) => {
+    const { start_date, end_date, user: userEmail, page = 1, limit = 20 } = req.query;
+
+    if (!start_date || !end_date || !userEmail) {
+      return res.status(400).json({ status: 'error', message: 'Start Date and End Date is required' });
+    }
+
+    try {
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await costModel.getCostsByDate(start_date, end_date, userEmail, pageNum, limitNum);
+      const total = result?.total?.length;
+      if (result?.costs?.length > 0) {
+        formatResultData({
+          res,
+          total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'costs/date-costs',
+          queryString: `start_date=${ start_date }&end_date=${ end_date }&user=${ userEmail }`,
+          result: result?.costs,
+          totalResults: total
+        })
+      } else {
+        res.status(404).json({ status: 'not found', message: 'Funds not found' });
+      }
+    } catch (err) {
+      console.error('Error getting Fund By Date:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
 
   return {
     createCost,
+    updateCostByID,
     getAllCosts,
     getCostByID,
     deleteCostByID,
     getCostsByUserEmail,
     getCostsByCategory,
     getCostsByCategoryByUser,
-    getCostCategoryWithValue
+    getCostCategoryWithValue,
+    deleteCostCategoryByUser,
+    getCostsByDate
   }
 }
 

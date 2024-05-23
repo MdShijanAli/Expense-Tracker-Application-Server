@@ -28,6 +28,47 @@ function costModel() {
     }
   }
 
+  // Update a Cost
+  const updateCostByID = async (id, value) => {
+    const timestamp = new Date();
+
+    // Add `updated_at` field to the value object
+    value.updated_at = timestamp;
+    let collection;
+    try {
+      collection = await getCollection();
+      console.log("ID", id, "Value: ", value);
+      const filter = { _id: new ObjectId(id) }
+
+      // Retrieve the existing document
+      const existingDoc = await collection.findOne(filter);
+      if (!existingDoc) {
+        throw new Error(`Document with id ${ id } not found`);
+      }
+
+      // Merge existing values with new values
+      const updatedValues = {
+        $set: {
+          category: value?.category !== "" ? value.category : existingDoc.category,
+          money: value?.money !== null ? value.money : existingDoc.money,
+          date: value?.date !== "" ? value.date : existingDoc.date,
+          time: value?.time !== "" ? value.time : existingDoc.time,
+          notes: value?.notes !== "" ? value.notes : existingDoc.notes,
+          user: value?.user !== "" ? value.user : existingDoc.user,
+          created_at: existingDoc?.created_at ? existingDoc.created_at : timestamp,
+          updated_at: timestamp
+        }
+      };
+
+      const cost = await collection.updateOne(filter, updatedValues);
+      return cost
+    } catch (err) {
+      console.log('Error', err);
+    } finally {
+      if (connection) await connection.close();
+    }
+  }
+
   // Get All Costs
   const getAllCosts = async (page = 1, limit = 20) => {
     let collection;
@@ -152,15 +193,60 @@ function costModel() {
   }
 
 
+  // Get Costs By Date
+  const getCostsByDate = async (startDate, endDate, userEmail, page = 1, limit = 20) => {
+    let collection;
+    try {
+      collection = await getCollection();
+      const skip = (page - 1) * limit
+      const query = {
+        user: userEmail,
+        date: {
+          $gte: startDate, // Ensure dates are in proper ISO format or Date objects
+          $lte: endDate
+        }
+      };
+      const costs = await collection.find(query).sort({ date: -1 }).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).toArray();
+      return { costs, total }
+    } catch (err) {
+      console.log('Error', err);
+    } finally {
+      if (connection) await connection.close();
+    }
+  }
+
+
+
+  // Delete a Cost Category for a User
+  const deleteCostCategoryByUser = async (category, user) => {
+    let collection;
+    try {
+      collection = await getCollection();
+      console.log('Category Model: ', category, 'User: ', user);
+      const result = await collection.deleteMany({ category: category, user: user });
+      return result.deletedCount; // Return the number of documents deleted
+    } catch (err) {
+      console.log('Error', err);
+      throw err; // Rethrow the error to be caught in the controller
+    } finally {
+      await connection.close();
+    }
+  }
+
+
   return {
     createCost,
+    updateCostByID,
     getAllCosts,
     getCostByID,
     deleteCostByID,
     getCostsByUserEmail,
     getCostsByCategory,
     getCostsByCategoryByUser,
-    getCostCategoryWithValue
+    getCostCategoryWithValue,
+    deleteCostCategoryByUser,
+    getCostsByDate,
   }
 
 }

@@ -1,6 +1,7 @@
 const express = require('express');
 const CategoryController = require('../controllers/categoryController');
 const FundsController = require('../controllers/fundsController');
+const calculationController = require('../controllers/calculationController')();
 const costController = require('../controllers/costController')();
 
 const router = express.Router();
@@ -26,12 +27,19 @@ router.delete('/api/delete-funds-category', FundsController.deleteFundsCategoryB
 
 // Costs
 router.post('/api/costs', costController.createCost);
+router.put('/api/costs/update/:id', costController.updateCostByID);
 router.get('/api/costs', costController.getAllCosts);
 router.get('/api/costs/details/:id', costController.getCostByID);
 router.get('/api/costs/user-costs', costController.getCostsByUserEmail);
+router.get('/api/costs/date-costs', costController.getCostsByDate);
 router.get('/api/costs/cost-category', costController.getCostsByCategory);
 router.get('/api/costs/user-cost-category', costController.getCostsByCategoryByUser);
 router.get('/api/costs/user-all-cost-category/lists', costController.getCostCategoryWithValue);
 router.delete('/api/costs', costController.deleteCostByID);
+router.delete('/api/costs/delete-user-category', costController.deleteCostCategoryByUser);
+
+// User Details
+router.get('/api/user-details', calculationController.userDetails);
+
 
 module.exports = router;

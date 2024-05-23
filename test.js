@@ -229,25 +229,25 @@ async function run() {
         // });
 
 
-        app.delete('/fund/:category/:user', async (req, res) => {
-            const category = req.params.category; // fixed
-            const user = req.params.user;
-            console.log(user);
-            const filter = { category: category, user: user };
-            const result = await fundsCollection.deleteMany(filter);
-            res.send(result);
-        });
+        // app.delete('/fund/:category/:user', async (req, res) => {
+        //     const category = req.params.category; // fixed
+        //     const user = req.params.user;
+        //     console.log(user);
+        //     const filter = { category: category, user: user };
+        //     const result = await fundsCollection.deleteMany(filter);
+        //     res.send(result);
+        // });
 
 
 
-        app.get('/cost/:category/:user', async (req, res) => {
-            const category = req.params.category; // fixed
-            const user = req.params.user;
-            console.log(user);
-            const filter = { category: category, user: user };
-            const result = await costsCollection.find(filter).toArray();
-            res.send(result);
-        });
+        // app.get('/cost/:category/:user', async (req, res) => {
+        //     const category = req.params.category; // fixed
+        //     const user = req.params.user;
+        //     console.log(user);
+        //     const filter = { category: category, user: user };
+        //     const result = await costsCollection.find(filter).toArray();
+        //     res.send(result);
+        // });
 
 
 
