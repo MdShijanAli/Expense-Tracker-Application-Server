@@ -1,15 +1,14 @@
-const FundModal = require("../models/fundModel")
+const fundsModel = require("../models/fundModel")()
 
-class FundsController {
+function fundsController() {
   // Post  a FUnd
-  async createFund(req, res) {
-    const fundModel = new FundModal();
+  const createFund = async (req, res) => {
     const value = req.body;
     try {
-      const result = await fundModel.createFund(value);
+      const result = await fundsModel.createFund(value);
       const createdID = result?.insertedId;
       if (createdID) {
-        const createdFund = await fundModel.getFundByID(createdID);
+        const createdFund = await fundsModel.getFundByID(createdID);
         res.json({
           status: 'success',
           message: 'Executed Successfully',
@@ -23,14 +22,13 @@ class FundsController {
   }
 
   // Update a FUnd
-  async updateFundByID(req, res) {
-    const fundModel = new FundModal();
+  const updateFundByID = async (req, res) => {
     const { id } = req.query
     const value = req.body;
     try {
-      const result = await fundModel.updateFundByID(id, value);
+      const result = await fundsModel.updateFundByID(id, value);
       if (result) {
-        const updatedFund = await fundModel.getFundByID(id);
+        const updatedFund = await fundsModel.getFundByID(id);
         res.json({
           status: 'success',
           message: 'Executed Successfully',
@@ -46,10 +44,9 @@ class FundsController {
 
 
   // Get All Funds
-  async getAllFunds(req, res) {
-    const fundModel = new FundModal();
+  const getAllFunds = async (req, res) => {
     try {
-      const result = await fundModel.getAllFunds();
+      const result = await fundsModel.getAllFunds();
       res.json({
         status: 'success', message: 'Executed Successfully', results: {
           total: result?.length,
@@ -64,8 +61,8 @@ class FundsController {
   }
 
   // Get FUnds By IID
-  async getFundByID(req, res) {
-    const fundModel = new FundModal();
+  const getFundByID = async (req, res) => {
+
     const fundID = req.params.id;
 
     if (!fundID) {
@@ -73,7 +70,7 @@ class FundsController {
     }
 
     try {
-      const result = await fundModel.getFundByID(fundID);
+      const result = await fundsModel.getFundByID(fundID);
       if (result) {
         res.json({ status: 'success', message: 'Executed Successfully', result: result });
       } else {
@@ -86,8 +83,7 @@ class FundsController {
   }
 
   // Delete FUnds By IID
-  async deleteFundByID(req, res) {
-    const fundModel = new FundModal();
+  const deleteFundByID = async (req, res) => {
     const fundID = req.params.id;
 
     if (!fundID) {
@@ -95,7 +91,7 @@ class FundsController {
     }
 
     try {
-      const result = await fundModel.deleteFundByID(fundID);
+      const result = await fundsModel.deleteFundByID(fundID);
       if (result) {
         res.json({ status: 'success', message: 'Executed Successfully' });
       } else {
@@ -108,8 +104,7 @@ class FundsController {
   }
 
   // Get FUnds By User Email
-  async getFundsByUserEmail(req, res) {
-    const fundModel = new FundModal();
+  const getFundsByUserEmail = async (req, res) => {
     const userEmail = req.params.user;
 
     if (!userEmail) {
@@ -117,7 +112,7 @@ class FundsController {
     }
 
     try {
-      const result = await fundModel.getFundsByUserEmail(userEmail);
+      const result = await fundsModel.getFundsByUserEmail(userEmail);
       if (result.length > 0) {
         res.json({
           status: 'success', message: 'Executed Successfully', results: {
@@ -136,8 +131,7 @@ class FundsController {
   }
 
   // Get FUnds By Category
-  async getFundsByCategory(req, res) {
-    const fundModel = new FundModal();
+  const getFundsByCategory = async (req, res) => {
     const { category } = req.query;
 
     if (!category) {
@@ -145,7 +139,7 @@ class FundsController {
     }
 
     try {
-      const result = await fundModel.getFundsByCategory(category);
+      const result = await fundsModel.getFundsByCategory(category);
       if (result.length > 0) {
         res.json({
           status: 'success', message: 'Executed Successfully', results: {
@@ -164,8 +158,8 @@ class FundsController {
   }
 
   // Delete Category for a User
-  async deleteFundsCategoryByUser(req, res) {
-    const fundModel = new FundModal();
+  const deleteFundsCategoryByUser = async (req, res) => {
+
     const { category, user } = req.query;
 
     console.log('Category: ', category, 'User: ', user);
@@ -174,7 +168,7 @@ class FundsController {
     }
 
     try {
-      const deletedCount = await fundModel.deleteFundsCategoryByUser(category, user);
+      const deletedCount = await fundsModel.deleteFundsCategoryByUser(category, user);
       if (deletedCount > 0) {
         res.json({ status: 'success', message: 'Executed Successfully', deletedCount: deletedCount });
       } else {
@@ -188,8 +182,8 @@ class FundsController {
 
 
   // Get FUnds By Date
-  async getFundsByDate(req, res) {
-    const fundModel = new FundModal();
+  const getFundsByDate = async (req, res) => {
+
     const { start_date, end_date } = req.query;
 
     if (!start_date || !end_date) {
@@ -197,7 +191,7 @@ class FundsController {
     }
 
     try {
-      const result = await fundModel.getFundsByDate(start_date, end_date);
+      const result = await fundsModel.getFundsByDate(start_date, end_date);
       if (result.length > 0) {
         res.json({
           status: 'success', message: 'Executed Successfully', results: {
@@ -217,8 +211,8 @@ class FundsController {
 
 
   // Get Funds Category for Specific User
-  async getFundsByCategoryAndUser(req, res) {
-    const fundModel = new FundModal();
+  const getFundsByCategoryAndUser = async (req, res) => {
+
     // const category = req.params.category;
     // const user = req.params.user;
     const { category, user } = req.query;
@@ -229,7 +223,7 @@ class FundsController {
     }
 
     try {
-      const result = await fundModel.getFundsByCategoryAndUser(category, user);
+      const result = await fundsModel.getFundsByCategoryAndUser(category, user);
       if (result?.length > 0) {
         res.json({
           status: 'success',
@@ -250,8 +244,8 @@ class FundsController {
   }
 
   // Get a user all category name and Money
-  async getFundCategoryWithValue(req, res) {
-    const fundModel = new FundModal();
+  const getFundCategoryWithValue = async (req, res) => {
+
     const userEmail = req.params.user;
 
     if (!userEmail) {
@@ -259,7 +253,7 @@ class FundsController {
     }
 
     try {
-      const result = await fundModel.getFundCategoryWithValue(userEmail);
+      const result = await fundsModel.getFundCategoryWithValue(userEmail);
       if (result.length > 0) {
         res.json({
           status: 'success', message: 'Executed Successfully', results: {
@@ -277,8 +271,20 @@ class FundsController {
     }
   }
 
-
+  return {
+    createFund,
+    updateFundByID,
+    getAllFunds,
+    getFundByID,
+    deleteFundByID,
+    getFundsByUserEmail,
+    getFundsByCategory,
+    deleteFundsCategoryByUser,
+    getFundsByDate,
+    getFundsByCategoryAndUser,
+    getFundCategoryWithValue
+  }
 
 }
 
-module.exports = new FundsController();
+module.exports = fundsController;
