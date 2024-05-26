@@ -251,14 +251,14 @@ async function run() {
 
 
 
-        app.delete('/cost/:category/:user', async (req, res) => {
-            const category = req.params.category; // fixed
-            const user = req.params.user;
-            console.log(user);
-            const filter = { category: category, user: user };
-            const result = await costsCollection.deleteMany(filter);
-            res.send(result);
-        });
+        // app.delete('/cost/:category/:user', async (req, res) => {
+        //     const category = req.params.category; // fixed
+        //     const user = req.params.user;
+        //     console.log(user);
+        //     const filter = { category: category, user: user };
+        //     const result = await costsCollection.deleteMany(filter);
+        //     res.send(result);
+        // });
 
 
 

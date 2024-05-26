@@ -306,6 +306,28 @@ function fundsController() {
     }
   }
 
+  const getAYearTotalFunds = async (req, res)=>{
+     const { user, year} = req.query;
+
+     if(!user || !year){
+      return res.status(400).json({ status: 'error', message: 'User Email and year field is required' });
+     }
+
+     try{
+      const yearNum = parseInt(year)
+      const result = await fundsModel.getAYearTotalFunds(user, yearNum);
+      res.json({
+        status: 'success',
+        message: 'Executed Successfully',
+        results: result
+      })
+     }
+     catch (err) {
+      console.error('Error getting Fund By User or Year:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
   return {
     createFund,
     updateFundByID,
@@ -317,7 +339,8 @@ function fundsController() {
     deleteFundsCategoryByUser,
     getFundsByDate,
     getFundsByCategoryAndUser,
-    getFundCategoryWithValue
+    getFundCategoryWithValue,
+    getAYearTotalFunds
   }
 
 }
