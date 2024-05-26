@@ -10,14 +10,14 @@ async function getCollection() {
 function fundsModel() {
   // Post a Fund
   const createFund = async (value) => {
+    let collection;
     const timestamp = new Date();  // Get the current timestamp
 
     // Add the `created_at` and `updated_at` fields to the value object
     value.created_at = timestamp;
     value.updated_at = timestamp;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
+      collection = await getCollection();
       const funds = await collection.insertOne(value);
       return funds
     } catch (err) {
@@ -29,19 +29,37 @@ function fundsModel() {
 
   // Update a Fund
   const updateFundByID = async (id, value) => {
+    let collection;
     const timestamp = new Date();
 
     // Add `updated_at` field to the value object
     value.updated_at = timestamp;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
+      collection = await getCollection();
       console.log("ID", id, "Value: ", value);
-      const filter = { _id: id }
-      const updateDoc = {
-        $set: value
+      const filter = { _id: new ObjectId(id) }
+
+      // Retrieve the existing document
+      const existingDoc = await collection.findOne(filter);
+      if (!existingDoc) {
+        throw new Error(`Document with id ${ id } not found`);
       }
-      const funds = await collection.updateOne(filter, updateDoc);
+
+      // Merge existing values with new values
+      const updatedValues = {
+        $set: {
+          category: value?.category !== "" ? value.category : existingDoc.category,
+          money: value?.money !== null ? value.money : existingDoc.money,
+          date: value?.date !== "" ? value.date : existingDoc.date,
+          time: value?.time !== "" ? value.time : existingDoc.time,
+          notes: value?.notes !== "" ? value.notes : existingDoc.notes,
+          user: value?.user !== "" ? value.user : existingDoc.user,
+          created_at: existingDoc?.created_at ? existingDoc.created_at : timestamp,
+          updated_at: timestamp
+        }
+      };
+
+      const funds = await collection.updateOne(filter, updatedValues);
       return funds
     } catch (err) {
       console.log('Error', err);
@@ -51,24 +69,26 @@ function fundsModel() {
   }
 
   // Get All FUnds
-  const getAllFunds = async () => {
+  const getAllFunds = async (page = 1, limit = 20) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
-      const funds = await collection.find({}).sort({ _id: -1 }).toArray();
-      return funds
+      collection = await getCollection();
+      const skip = (page - 1) * limit
+      const funds = await collection.find({}).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
+      const total = await collection.find({}).toArray(); // Get the total count of documents
+      return { funds, total }
     } catch (err) {
       console.log('Error', err);
     } finally {
-      await connection.close();
+      if (connection) await connection.close();
     }
   }
 
   // Get Fund By ID
   const getFundByID = async (id) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
+      collection = await getCollection();
       const funds = await collection.findOne({ _id: new ObjectId(id) });
       return funds
     } catch (err) {
@@ -80,9 +100,9 @@ function fundsModel() {
 
   // Delete Fund By ID
   const deleteFundByID = async (id) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
+      collection = await getCollection();
       const funds = await collection.deleteOne({ _id: new ObjectId(id) });
       return funds
     } catch (err) {
@@ -93,12 +113,14 @@ function fundsModel() {
   }
 
   // Get Fund By User Email
-  const getFundsByUserEmail = async (userEmail) => {
+  const getFundsByUserEmail = async (userEmail, page = 1, limit = 20) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
-      const funds = await collection.find({ user: userEmail }).sort({ _id: -1 }).toArray();
-      return funds
+      collection = await getCollection();
+      const skip = (page - 1) * limit
+      const funds = await collection.find({ user: userEmail }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
+      const total = await collection.find({ user: userEmail }).toArray(); // Get the total count of documents
+      return { funds, total };
     } catch (err) {
       console.log('Error', err);
     } finally {
@@ -107,12 +129,14 @@ function fundsModel() {
   }
 
   // Get Fund By Category
-  const getFundsByCategory = async (category) => {
+  const getFundsByCategory = async (category, page = 1, limit = 20) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
-      const funds = await collection.find({ category: category }).sort({ category: -1 }).toArray();
-      return funds
+      collection = await getCollection();
+      const skip = (page - 1) * limit
+      const funds = await collection.find({ category: category }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
+      const total = await collection.find({ category: category }).toArray(); // Get the total count of documents
+      return { funds, total }
     } catch (err) {
       console.log('Error', err);
     } finally {
@@ -122,10 +146,9 @@ function fundsModel() {
 
   // Delete a Fund Category for a User
   const deleteFundsCategoryByUser = async (category, user) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
-      console.log('Category Model: ', category, 'User: ', user);
+      collection = await getCollection();
       const result = await collection.deleteMany({ category: category, user: user });
       return result.deletedCount; // Return the number of documents deleted
     } catch (err) {
@@ -138,18 +161,21 @@ function fundsModel() {
 
 
   // Get Fund By Date
-  const getFundsByDate = async (startDate, endDate) => {
+  const getFundsByDate = async (startDate, endDate, userEmail, page = 1, limit = 20) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
+      collection = await getCollection();
+      const skip = (page - 1) * limit
       const query = {
+        user: userEmail,
         date: {
           $gte: startDate, // Ensure dates are in proper ISO format or Date objects
           $lte: endDate
         }
       };
-      const funds = await collection.find(query).sort({ date: -1 }).toArray();
-      return funds
+      const funds = await collection.find(query).sort({ date: -1 }).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).toArray();
+      return { funds, total }
     } catch (err) {
       console.log('Error', err);
     } finally {
@@ -159,13 +185,14 @@ function fundsModel() {
 
 
   // Get Fund Category for specific user
-  const getFundsByCategoryAndUser = async (category, user) => {
+  const getFundsByCategoryAndUser = async (category, user, page = 1, limit = 20) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
-      console.log('User:', user, 'Category:', category);
-      const funds = await collection.find({ category: category, user: user }).sort({ _id: -1 }).toArray();
-      return funds
+      collection = await getCollection();
+      const skip = (page - 1) * limit
+      const funds = await collection.find({ category: category, user: user }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
+      const total = await collection.find({ category: category, user: user }).toArray(); // Get the total count of documents
+      return { funds, total }
     } catch (err) {
       console.log('Error', err);
     } finally {
@@ -174,19 +201,30 @@ function fundsModel() {
   }
 
 
-  const getFundCategoryWithValue = async (user) => {
+  const getFundCategoryWithValue = async (user, page = 1, limit = 20) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("funds");
+      collection = await getCollection();
+      const skip = (page - 1) * limit
 
-      // MongoDB aggregation pipeline
-      const pipeline = [
-        { $match: { user: user } },  // Filter documents by user
-        { $group: { _id: "$category", name: { $first: "$category" }, value: { $sum: "$money" } } },
+      // Initial aggregation pipeline to get the total count
+      const totalPipeline = [
+        { $match: { user: user } }, // Filter documents by user
+        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
       ];
 
-      const funds = await collection.aggregate(pipeline).sort({ name: 1 }).toArray();
-      return funds;
+      // Aggregation pipeline with limit and skip
+      const pipeline = [
+        { $match: { user: user } }, // Filter documents by user
+        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
+        { $sort: { name: 1 } }, // Sort by category name
+        { $skip: skip }, // Skip documents for pagination
+        { $limit: limit } // Limit the number of documents
+      ];
+
+      const funds = await collection.aggregate(pipeline).toArray();
+      const total = await collection.aggregate(totalPipeline).toArray();
+      return { funds, total };
     } catch (err) {
       console.error('Error:', err);
       throw err; // Rethrow error to handle it in the calling function

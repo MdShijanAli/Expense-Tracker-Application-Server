@@ -1,3 +1,5 @@
+const formatResultData = require("../utils/formatResultsData");
+
 const fundsModel = require("../models/fundModel")()
 
 function fundsController() {
@@ -23,7 +25,7 @@ function fundsController() {
 
   // Update a FUnd
   const updateFundByID = async (req, res) => {
-    const { id } = req.query
+    const id = req.params.id
     const value = req.body;
     try {
       const result = await fundsModel.updateFundByID(id, value);
@@ -45,15 +47,23 @@ function fundsController() {
 
   // Get All Funds
   const getAllFunds = async (req, res) => {
+    const { page = 1, limit = 20 } = req.query;
     try {
-      const result = await fundsModel.getAllFunds();
-      res.json({
-        status: 'success', message: 'Executed Successfully', results: {
-          total: result?.length,
-          totalAmount: result?.map((fund) => fund.money)?.reduce((p, n) => p + n, 0),
-          data: result
-        }
-      });
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await fundsModel.getAllFunds(pageNum, limitNum);
+      const total = result?.total?.length;
+
+      formatResultData({
+        res,
+        total,
+        limitNum,
+        pageNum,
+        apiEndPoint: 'funds',
+        result: result?.funds,
+        totalResults: total
+      })
+
     } catch (err) {
       console.error('Error getting FUnds:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
@@ -84,7 +94,7 @@ function fundsController() {
 
   // Delete FUnds By IID
   const deleteFundByID = async (req, res) => {
-    const fundID = req.params.id;
+    const fundID = req.query.id;
 
     if (!fundID) {
       return res.status(400).json({ status: 'error', message: 'FUnd ID is required' });
@@ -105,22 +115,28 @@ function fundsController() {
 
   // Get FUnds By User Email
   const getFundsByUserEmail = async (req, res) => {
-    const userEmail = req.params.user;
+    const { user: userEmail, page = 1, limit = 20 } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
     }
 
     try {
-      const result = await fundsModel.getFundsByUserEmail(userEmail);
-      if (result.length > 0) {
-        res.json({
-          status: 'success', message: 'Executed Successfully', results: {
-            total: result?.length,
-            totalAmount: result?.map((fund) => fund.money)?.reduce((p, n) => p + n, 0),
-            data: result
-          }
-        });
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await fundsModel.getFundsByUserEmail(userEmail, pageNum, limitNum);
+      const total = result?.total?.length;
+      if (result?.funds?.length > 0) {
+        formatResultData({
+          res,
+          total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'funds/user-funds',
+          queryString: `user=${ userEmail }`,
+          result: result?.funds,
+          totalResults: total
+        })
       } else {
         res.status(404).json({ status: 'not found', message: 'Fund not found' });
       }
@@ -132,22 +148,28 @@ function fundsController() {
 
   // Get FUnds By Category
   const getFundsByCategory = async (req, res) => {
-    const { category } = req.query;
+    const { category_name: category, page = 1, limit = 20 } = req.query;
 
     if (!category) {
       return res.status(400).json({ status: 'error', message: 'Category is required' });
     }
 
     try {
-      const result = await fundsModel.getFundsByCategory(category);
-      if (result.length > 0) {
-        res.json({
-          status: 'success', message: 'Executed Successfully', results: {
-            total: result?.length,
-            totalAmount: result?.map((fund) => fund.money)?.reduce((p, n) => p + n, 0),
-            data: result
-          }
-        });
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await fundsModel.getFundsByCategory(category, pageNum, limitNum);
+      const total = result?.total?.length;
+      if (result?.funds?.length > 0) {
+        formatResultData({
+          res,
+          total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'funds/fund-category',
+          queryString: `category_name=${ category }`,
+          result: result?.funds,
+          totalResults: total
+        })
       } else {
         res.status(404).json({ status: 'not found', message: 'Funds not found' });
       }
@@ -184,22 +206,28 @@ function fundsController() {
   // Get FUnds By Date
   const getFundsByDate = async (req, res) => {
 
-    const { start_date, end_date } = req.query;
+    const { start_date, end_date, user: userEmail, page = 1, limit = 20 } = req.query;
 
-    if (!start_date || !end_date) {
-      return res.status(400).json({ status: 'error', message: 'Start Date and End Date is required' });
+    if (!start_date || !end_date || !userEmail) {
+      return res.status(400).json({ status: 'error', message: 'Start Date , End Date and user is required' });
     }
 
     try {
-      const result = await fundsModel.getFundsByDate(start_date, end_date);
-      if (result.length > 0) {
-        res.json({
-          status: 'success', message: 'Executed Successfully', results: {
-            total: result?.length,
-            totalAmount: result?.map((fund) => fund.money)?.reduce((p, n) => p + n, 0),
-            data: result
-          }
-        });
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await fundsModel.getFundsByDate(start_date, end_date, userEmail, pageNum, limitNum);
+      const total = result?.total?.length;
+      if (result?.funds?.length > 0) {
+        formatResultData({
+          res,
+          total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'funds/date-funds',
+          queryString: `start_date=${ start_date }&end_date=${ end_date }&user=${ userEmail }`,
+          result: result?.funds,
+          totalResults: total
+        })
       } else {
         res.status(404).json({ status: 'not found', message: 'Funds not found' });
       }
@@ -213,27 +241,28 @@ function fundsController() {
   // Get Funds Category for Specific User
   const getFundsByCategoryAndUser = async (req, res) => {
 
-    // const category = req.params.category;
-    // const user = req.params.user;
-    const { category, user } = req.query;
-    console.log('User:', user, 'Category:', category);
+    const { category_name: category, user: userEmail, page = 1, limit = 20 } = req.query;
 
-    if (!category && !user) {
+    if (!category && !userEmail) {
       return res.status(400).json({ status: 'error', message: 'Category and User is required' });
     }
 
     try {
-      const result = await fundsModel.getFundsByCategoryAndUser(category, user);
-      if (result?.length > 0) {
-        res.json({
-          status: 'success',
-          message: 'Executed Successfully',
-          results: {
-            total: result?.length,
-            totalAmount: result?.map((fund) => fund.money)?.reduce((p, n) => p + n, 0),
-            data: result
-          }
-        });
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await fundsModel.getFundsByCategoryAndUser(category, userEmail, pageNum, limitNum);
+      const total = result?.total?.length;
+      if (result?.funds?.length > 0) {
+        formatResultData({
+          res,
+          total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'funds/user-fund-category',
+          queryString: `category_name=${ category }&user=${ userEmail }`,
+          result: result?.funds,
+          totalResults: total
+        })
       } else {
         res.status(404).json({ status: 'not found', message: 'Funds not found' });
       }
@@ -246,22 +275,28 @@ function fundsController() {
   // Get a user all category name and Money
   const getFundCategoryWithValue = async (req, res) => {
 
-    const userEmail = req.params.user;
+    const { user: userEmail, page = 1, limit = 20 } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
     }
 
     try {
-      const result = await fundsModel.getFundCategoryWithValue(userEmail);
-      if (result.length > 0) {
-        res.json({
-          status: 'success', message: 'Executed Successfully', results: {
-            total: result?.length,
-            totalAmount: result?.map((fund) => fund.value)?.reduce((p, n) => p + n, 0),
-            data: result
-          }
-        });
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const result = await fundsModel.getFundCategoryWithValue(userEmail, pageNum, limitNum);
+      const total = result?.total?.length;
+      if (result?.funds?.length > 0) {
+        formatResultData({
+          res,
+          total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'funds/user-all-fund-category/lists',
+          queryString: `user=${ userEmail }`,
+          result: result?.funds,
+          totalResults: total
+        })
       } else {
         res.status(404).json({ status: 'not found', message: 'Fund not found' });
       }
