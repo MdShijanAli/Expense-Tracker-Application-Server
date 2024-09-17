@@ -370,6 +370,61 @@ function fundsModel() {
   };
   
 
+  const getUserCurrentYearData = async (userEmail, year) => {
+    let collection;
+    try {
+      collection = await getCollection();
+  
+      // Define an array of month names
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+  
+      // Array to hold results
+      const resultData = [];
+  
+      // Loop through all months of the specified year
+      for (let month = 1; month <= 12; month++) {
+        // Format the month with leading zero if necessary
+        const formattedMonth = String(month).padStart(2, '0');
+        
+        const startDate = `${year}-${formattedMonth}-01`;
+        const endDate = `${year}-${formattedMonth}-31`;
+  
+        console.log("Fetching data for", startDate, endDate);
+  
+        // Aggregation pipeline to calculate total money for each month
+        const pipeline = [
+          {
+            $match: {
+              user: userEmail,
+              date: {
+                $gte: startDate,
+                $lte: endDate
+              }
+            }
+          }, // Filter documents by user and date range
+          { $group: { _id: null, totalMoney: { $sum: "$money" } } }
+        ];
+  
+        const result = await collection.aggregate(pipeline).toArray();
+  
+        // Extract the total money value from the result
+        const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
+  
+        // Push the month and money into the resultData array
+        resultData.push({[monthNames[month - 1]]: totalMoney });
+      }
+  
+      return resultData;
+    } catch (err) {
+      console.log('Error', err);
+    } finally {
+      if (connection) await connection.close();
+    }
+  }; 
+
 
   return {
     createFund,
@@ -385,7 +440,8 @@ function fundsModel() {
     getFundCategoryWithValue,
     getUserTotalFundAmount,
     getAMonthUserTotalFundAmount,
-    getAYearTotalFunds
+    getAYearTotalFunds,
+    getUserCurrentYearData
   }
 
 }

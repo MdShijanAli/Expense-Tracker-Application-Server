@@ -297,14 +297,37 @@ function costController() {
           totalResults: total
         })
       } else {
-        res.status(404).json({ status: 'not found', message: 'Funds not found' });
+        res.status(404).json({ status: 'not found', message: 'Costs not found' });
       }
     } catch (err) {
-      console.error('Error getting Fund By Date:', err);
+      console.error('Error getting Cost By Date:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   }
 
+  // Get user full year data
+  const getUserYearDataController = async (req, res) => {
+    try {
+      const userEmail = req.params.email;
+      const year = parseInt(req.params.year);
+      const result = await costModel.getUserCurrentYearData(userEmail, year);
+
+      if (result) {
+        res.json({
+          status: 'success',
+          message: 'Executed Successfully',
+          results: result
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching user year data:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error fetching user year data"
+      });
+    }
+  };
+  
 
   return {
     createCost,
@@ -317,7 +340,8 @@ function costController() {
     getCostsByCategoryByUser,
     getCostCategoryWithValue,
     deleteCostCategoryByUser,
-    getCostsByDate
+    getCostsByDate,
+    getUserYearDataController
   }
 }
 
