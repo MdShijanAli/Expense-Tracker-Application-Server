@@ -22,6 +22,8 @@ router.get('/api/funds/fund-category', fundsController.getFundsByCategory);
 router.get('/api/funds/date-funds', fundsController.getFundsByDate);
 router.get('/api/funds/user-fund-category', fundsController.getFundsByCategoryAndUser);
 router.get('/api/funds/user-all-fund-category/lists', fundsController.getFundCategoryWithValue);
+router.get('/api/funds/user-year-fund', fundsController.getAYearTotalFunds);
+router.get('/api/funds/:email/:year', fundsController.getUserYearDataController);
 router.delete('/api/funds/delete', fundsController.deleteFundByID);
 router.delete('/api/funds/delete-user-category', fundsController.deleteFundsCategoryByUser);
 
@@ -35,6 +37,7 @@ router.get('/api/costs/date-costs', costController.getCostsByDate);
 router.get('/api/costs/cost-category', costController.getCostsByCategory);
 router.get('/api/costs/user-cost-category', costController.getCostsByCategoryByUser);
 router.get('/api/costs/user-all-cost-category/lists', costController.getCostCategoryWithValue);
+router.get('/api/costs/:email/:year', costController.getUserYearDataController);
 router.delete('/api/costs/delete', costController.deleteCostByID);
 router.delete('/api/costs/delete-user-category', costController.deleteCostCategoryByUser);
 

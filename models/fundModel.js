@@ -328,6 +328,103 @@ function fundsModel() {
     }
   }
 
+  const getAYearTotalFunds = async (userEmail, year) => {
+    let collection;
+    try {
+      collection = await getCollection();
+
+      const funds = await collection.find({}).toArray();
+
+      // Calculate total money for each month
+      const monthlyTotals = {};
+          
+      // Initialize an object with the months of the current year
+      const currentYearMonths = new Array(12).fill(0).map((_, index) => {
+        return `${year}-${(index + 1).toString().padStart(2, '0')}`;
+      });
+  
+      currentYearMonths.forEach(monthYear => {
+        monthlyTotals[monthYear] = 0;
+      });
+  
+      funds.forEach(entry => {
+        const monthYear = entry.date.substring(0, 7); // Extracting "YYYY-MM"
+        if (currentYearMonths.includes(monthYear)) {
+          monthlyTotals[monthYear] += entry.money;
+        }
+      });
+  
+      // Convert object to array and sort by month
+      const sortedMonthlyTotals = Object.entries(monthlyTotals)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+
+      
+  
+      return sortedMonthlyTotals ;
+    } catch (err) {
+      console.log('Error', err);
+    } finally {
+       if (connection) await connection.close();
+    }
+  };
+  
+
+  const getUserCurrentYearData = async (userEmail, year) => {
+    let collection;
+    try {
+      collection = await getCollection();
+  
+      // Define an array of month names
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+  
+      // Array to hold results
+      const resultData = [];
+  
+      // Loop through all months of the specified year
+      for (let month = 1; month <= 12; month++) {
+        // Format the month with leading zero if necessary
+        const formattedMonth = String(month).padStart(2, '0');
+        
+        const startDate = `${year}-${formattedMonth}-01`;
+        const endDate = `${year}-${formattedMonth}-31`;
+  
+        console.log("Fetching data for", startDate, endDate);
+  
+        // Aggregation pipeline to calculate total money for each month
+        const pipeline = [
+          {
+            $match: {
+              user: userEmail,
+              date: {
+                $gte: startDate,
+                $lte: endDate
+              }
+            }
+          }, // Filter documents by user and date range
+          { $group: { _id: null, totalMoney: { $sum: "$money" } } }
+        ];
+  
+        const result = await collection.aggregate(pipeline).toArray();
+  
+        // Extract the total money value from the result
+        const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
+  
+        // Push the month and money into the resultData array
+        resultData.push({[monthNames[month - 1]]: totalMoney });
+      }
+  
+      return resultData;
+    } catch (err) {
+      console.log('Error', err);
+    } finally {
+      if (connection) await connection.close();
+    }
+  }; 
+
 
   return {
     createFund,
@@ -342,7 +439,9 @@ function fundsModel() {
     getFundsByCategoryAndUser,
     getFundCategoryWithValue,
     getUserTotalFundAmount,
-    getAMonthUserTotalFundAmount
+    getAMonthUserTotalFundAmount,
+    getAYearTotalFunds,
+    getUserCurrentYearData
   }
 
 }

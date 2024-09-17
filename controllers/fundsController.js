@@ -306,6 +306,51 @@ function fundsController() {
     }
   }
 
+  const getAYearTotalFunds = async (req, res)=>{
+     const { user, year} = req.query;
+
+     if(!user || !year){
+      return res.status(400).json({ status: 'error', message: 'User Email and year field is required' });
+     }
+
+     try{
+      const yearNum = parseInt(year)
+      const result = await fundsModel.getAYearTotalFunds(user, yearNum);
+      res.json({
+        status: 'success',
+        message: 'Executed Successfully',
+        results: result
+      })
+     }
+     catch (err) {
+      console.error('Error getting Fund By User or Year:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
+    // Get user full year data
+    const getUserYearDataController = async (req, res) => {
+      try {
+        const userEmail = req.params.email;
+        const year = parseInt(req.params.year);
+        const result = await fundsModel.getUserCurrentYearData(userEmail, year);
+  
+        if (result) {
+          res.json({
+            status: 'success',
+            message: 'Executed Successfully',
+            results: result
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user year data:", error);
+        res.status(500).json({
+          success: false,
+          message: "Error fetching user year data"
+        });
+      }
+    };
+
   return {
     createFund,
     updateFundByID,
@@ -317,7 +362,9 @@ function fundsController() {
     deleteFundsCategoryByUser,
     getFundsByDate,
     getFundsByCategoryAndUser,
-    getFundCategoryWithValue
+    getFundCategoryWithValue,
+    getAYearTotalFunds,
+    getUserYearDataController
   }
 
 }
