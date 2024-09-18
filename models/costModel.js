@@ -313,6 +313,76 @@ function costModel() {
     }
   };  
 
+  const getAMonthUserTotalCostAmount = async (userEmail, currentMonth) => {
+    let collection;
+    try {
+      collection = await getCollection();
+
+      // Define an array of month names
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+
+      // Calculate the date range for the previous month
+      const now = new Date();
+      const year = now.getFullYear();
+
+      let month;
+
+      if (currentMonth) {
+        month = now.getMonth() + 1; // Current month
+      } else {
+        month = now.getMonth(); // Previous month
+        if (month === 0) {
+          // Handle the edge case for January
+          month = 12;
+          year -= 1;
+        }
+      }
+
+      // Get the month name
+      const monthName = monthNames[month - 1];
+
+      // Format the month with leading zero if necessary
+      const formattedMonth = String(month).padStart(2, '0');
+
+      const startDate = `${ year }-${ formattedMonth }-01`
+      const endDate = `${ year }-${ formattedMonth }-31`
+
+      console.log("startDate", startDate);
+      console.log("endDate", endDate);
+
+      // Aggregation pipeline to calculate the total money for the previous month
+      const pipeline = [
+        {
+          $match: {
+            user: userEmail,
+            date: {
+              $gte: startDate,
+              $lte: endDate
+            }
+          }
+        }, // Filter documents by user and date range
+        { $group: { _id: null, totalMoney: { $sum: "$money" } } }
+      ];
+
+      const result = await collection.aggregate(pipeline).toArray();
+
+      console.log('Result: ', result);
+
+      // // Extract the total money value from the result
+      const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
+
+      // Generate the desired object
+      return { month: monthName, money: totalMoney };
+    } catch (err) {
+      console.log('Error', err);
+    } finally {
+      if (connection) await connection.close();
+    }
+  }
+
   return {
     createCost,
     updateCostByID,
@@ -326,7 +396,8 @@ function costModel() {
     deleteCostCategoryByUser,
     getCostsByDate,
     getUserTotalCostAmount,
-    getUserCurrentYearData
+    getUserCurrentYearData,
+    getAMonthUserTotalCostAmount
   }
 
 }
