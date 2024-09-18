@@ -37,7 +37,6 @@ function costModel() {
     let collection;
     try {
       collection = await getCollection();
-      console.log("ID", id, "Value: ", value);
       const filter = { _id: new ObjectId(id) }
 
       // Retrieve the existing document
@@ -221,11 +220,9 @@ function costModel() {
     let collection;
     try {
       collection = await getCollection();
-      console.log('Category Model: ', category, 'User: ', user);
       const result = await collection.deleteMany({ category: category, user: user });
       return result.deletedCount; // Return the number of documents deleted
     } catch (err) {
-      console.log('Error', err);
       throw err; // Rethrow the error to be caught in the controller
     } finally {
       await connection.close();
@@ -279,8 +276,7 @@ function costModel() {
         
         const startDate = `${year}-${formattedMonth}-01`;
         const endDate = `${year}-${formattedMonth}-31`;
-  
-        console.log("Fetching data for", startDate, endDate);
+
   
         // Aggregation pipeline to calculate total money for each month
         const pipeline = [
@@ -350,9 +346,6 @@ function costModel() {
       const startDate = `${ year }-${ formattedMonth }-01`
       const endDate = `${ year }-${ formattedMonth }-31`
 
-      console.log("startDate", startDate);
-      console.log("endDate", endDate);
-
       // Aggregation pipeline to calculate the total money for the previous month
       const pipeline = [
         {
@@ -368,8 +361,6 @@ function costModel() {
       ];
 
       const result = await collection.aggregate(pipeline).toArray();
-
-      console.log('Result: ', result);
 
       // // Extract the total money value from the result
       const totalMoney = result.length > 0 ? result[0].totalMoney : 0;

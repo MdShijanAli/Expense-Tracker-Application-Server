@@ -184,7 +184,6 @@ function fundsController() {
 
     const { category, user } = req.query;
 
-    console.log('Category: ', category, 'User: ', user);
     if (!category || !user) { // Check for category and user
       return res.status(400).json({ status: 'error', message: 'Category and User Email are required' });
     }

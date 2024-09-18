@@ -24,14 +24,11 @@ function calculationController() {
 
 
       // Log the results of each model call
-      console.log('Total Expense: ', totalExpense);
-      console.log('Total Income: ', totalIncome);
 
       // Combine results into an array
       const result = { totalExpense, totalIncome, currentMonthExpense, prevMonthMonthExpense, currentMonthFund, prevMonthFund, restFund };
 
       // Log and send the response
-      console.log('Result: ', result);
       res.json({
         status: "Success",
         message: 'Executed Successfully',
