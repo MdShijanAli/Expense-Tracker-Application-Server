@@ -36,7 +36,6 @@ function fundsModel() {
     value.updated_at = timestamp;
     try {
       collection = await getCollection();
-      console.log("ID", id, "Value: ", value);
       const filter = { _id: new ObjectId(id) }
 
       // Retrieve the existing document
@@ -295,9 +294,6 @@ function fundsModel() {
       const startDate = `${ year }-${ formattedMonth }-01`
       const endDate = `${ year }-${ formattedMonth }-31`
 
-      console.log("startDate", startDate);
-      console.log("endDate", endDate);
-
       // Aggregation pipeline to calculate the total money for the previous month
       const pipeline = [
         {
@@ -313,8 +309,6 @@ function fundsModel() {
       ];
 
       const result = await collection.aggregate(pipeline).toArray();
-
-      console.log('Result: ', result);
 
       // // Extract the total money value from the result
       const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
@@ -391,8 +385,6 @@ function fundsModel() {
         
         const startDate = `${year}-${formattedMonth}-01`;
         const endDate = `${year}-${formattedMonth}-31`;
-  
-        console.log("Fetching data for", startDate, endDate);
   
         // Aggregation pipeline to calculate total money for each month
         const pipeline = [

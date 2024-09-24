@@ -43,6 +43,7 @@ router.delete('/api/costs/delete-user-category', costController.deleteCostCatego
 
 // User Details
 router.get('/api/user-details', calculationController.getUserDetails);
+router.get('/api/user-details-year', calculationController.getUserCustomYearDetails);
 
 
 module.exports = router;

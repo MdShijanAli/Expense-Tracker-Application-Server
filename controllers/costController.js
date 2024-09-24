@@ -123,7 +123,6 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostsByUserEmail(userEmail, pageNum, limitNum);
-      console.log('Result: ', result);
       const total = result?.total?.length;
       if (result?.costs.length > 0) {
         formatResultData({
@@ -152,8 +151,6 @@ function costController() {
     if (!category) {
       return res.status(400).json({ status: 'error', message: 'Category Name is required' });
     }
-
-    console.log("category: ", category, 'Page: ', 1, 'Limit: ', limit);
 
     try {
       const pageNum = parseInt(page);
@@ -188,8 +185,6 @@ function costController() {
     if (!category && !userEmail) {
       return res.status(400).json({ status: 'error', message: 'Category Name and Email is required' });
     }
-
-    console.log("category: ", category, 'Page: ', 1, 'Limit: ', limit);
 
     try {
       const pageNum = parseInt(page);
@@ -253,7 +248,6 @@ function costController() {
   const deleteCostCategoryByUser = async (req, res) => {
     const { category, user } = req.query;
 
-    console.log('Category: ', category, 'User: ', user);
     if (!category || !user) { // Check for category and user
       return res.status(400).json({ status: 'error', message: 'Category and User Email are required' });
     }

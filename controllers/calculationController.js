@@ -20,31 +20,56 @@ function calculationController() {
       const totalIncome = await fundsModel.getUserTotalFundAmount(userEmail)
       const currentMonthFund = await fundsModel.getAMonthUserTotalFundAmount(userEmail, true)
       const prevMonthFund = await fundsModel.getAMonthUserTotalFundAmount(userEmail, false)
-      const restFund = { money: totalIncome.money - totalExpense.money }
+      const restFund = { money: totalIncome?.money - totalExpense?.money }
 
 
       // Log the results of each model call
-      console.log('Total Expense: ', totalExpense);
-      console.log('Total Income: ', totalIncome);
 
       // Combine results into an array
       const result = { totalExpense, totalIncome, currentMonthExpense, prevMonthMonthExpense, currentMonthFund, prevMonthFund, restFund };
 
       // Log and send the response
-      console.log('Result: ', result);
       res.json({
         status: "Success",
         message: 'Executed Successfully',
         result: result
       })
     } catch (err) {
-      console.error('Error getting Cost By User Email:', err);
+      console.error('Error getting Data By User Email:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  }
+
+  const getUserCustomYearDetails = async(req, res)=> {
+    const { user: userEmail, year = 2024 } = req.query;
+
+    if (!userEmail) {
+      return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
+    }
+    try {
+      // Fetch total expense and total income concurrently
+
+      const income = await fundsModel.getUserCurrentYearData(userEmail, year)
+      const expense = await costModel.getUserCurrentYearData(userEmail, year)
+
+      // Combine results into an array
+      const result = { income, expense};
+
+      // Log and send the response
+      res.json({
+        status: "Success",
+        message: 'Executed Successfully',
+        result: result
+      })
+    } catch (err) {
+      console.error('Error getting Data By User Email:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   }
 
   return {
-    getUserDetails
+    getUserDetails,
+    getUserCustomYearDetails
   }
 }
 
