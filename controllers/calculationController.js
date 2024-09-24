@@ -40,27 +40,27 @@ function calculationController() {
     }
   }
 
-  const getUserCustomYearDetails = async(req, res)=> {
+  const getUserCustomYearDetails = async (req, res) => {
     const { user: userEmail, year = 2024 } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
     }
     try {
-      // Fetch total expense and total income concurrently
-
       const income = await fundsModel.getUserCurrentYearData(userEmail, year)
       const expense = await costModel.getUserCurrentYearData(userEmail, year)
+      
 
       // Combine results into an array
-      const result = { income, expense};
-
-      // Log and send the response
-      res.json({
-        status: "Success",
-        message: 'Executed Successfully',
-        result: result
-      })
+      if (income && expense) {
+        const result = { income, expense };
+        // Log and send the response
+        res.json({
+          status: "Success",
+          message: 'Executed Successfully',
+          result: result
+        })
+      }
     } catch (err) {
       console.error('Error getting Data By User Email:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });

@@ -271,7 +271,6 @@ function costModel() {
         const startDate = `${year}-${formattedMonth}-01`;
         const endDate = `${year}-${formattedMonth}-31`;
 
-  
         // Aggregation pipeline to calculate total money for each month
         const pipeline = [
           {
