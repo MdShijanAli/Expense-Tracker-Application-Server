@@ -23,7 +23,7 @@ function calculationController() {
       const restFund = { money: totalIncome?.money - totalExpense?.money }
 
 
-      // Log the results of each model call
+      if(totalExpense && currentMonthExpense && prevMonthMonthExpense && totalIncome && currentMonthFund && prevMonthFund && restFund){
 
       // Combine results into an array
       const result = { totalExpense, totalIncome, currentMonthExpense, prevMonthMonthExpense, currentMonthFund, prevMonthFund, restFund };
@@ -34,6 +34,7 @@ function calculationController() {
         message: 'Executed Successfully',
         result: result
       })
+    }
     } catch (err) {
       console.error('Error getting Data By User Email:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
@@ -49,11 +50,19 @@ function calculationController() {
     try {
       const income = await fundsModel.getUserCurrentYearData(userEmail, year)
       const expense = await costModel.getUserCurrentYearData(userEmail, year)
+
+      const totalIncome = income.reduce((p,n)=> p+n, 0);
+      const totalExpense = expense.reduce((p,n)=> p+n, 0);
+
+      const total = totalIncome + totalExpense;
+
+      const incomePercentage = Math.round(totalIncome/total * 100);
+      const expensePercentage = Math.round(totalExpense/total * 100);
       
 
       // Combine results into an array
       if (income && expense) {
-        const result = { income, expense };
+        const result = { income, expense, incomePercentage, expensePercentage };
         // Log and send the response
         res.json({
           status: "Success",
