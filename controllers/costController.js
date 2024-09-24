@@ -299,30 +299,6 @@ function costController() {
     }
   }
 
-  // Get user full year data
-  const getUserYearDataController = async (req, res) => {
-    try {
-      const userEmail = req.params.email;
-      const year = parseInt(req.params.year);
-      const result = await costModel.getUserCurrentYearData(userEmail, year);
-
-      if (result) {
-        res.json({
-          status: 'success',
-          message: 'Executed Successfully',
-          results: result
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching user year data:", error);
-      res.status(500).json({
-        success: false,
-        message: "Error fetching user year data"
-      });
-    }
-  };
-  
-
   return {
     createCost,
     updateCostByID,
@@ -334,8 +310,7 @@ function costController() {
     getCostsByCategoryByUser,
     getCostCategoryWithValue,
     deleteCostCategoryByUser,
-    getCostsByDate,
-    getUserYearDataController
+    getCostsByDate
   }
 }
 

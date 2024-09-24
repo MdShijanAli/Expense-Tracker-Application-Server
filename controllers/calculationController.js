@@ -23,7 +23,7 @@ function calculationController() {
       const restFund = { money: totalIncome?.money - totalExpense?.money }
 
 
-      // Log the results of each model call
+      if(totalExpense && currentMonthExpense && prevMonthMonthExpense && totalIncome && currentMonthFund && prevMonthFund && restFund){
 
       // Combine results into an array
       const result = { totalExpense, totalIncome, currentMonthExpense, prevMonthMonthExpense, currentMonthFund, prevMonthFund, restFund };
@@ -34,33 +34,42 @@ function calculationController() {
         message: 'Executed Successfully',
         result: result
       })
+    }
     } catch (err) {
       console.error('Error getting Data By User Email:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   }
 
-  const getUserCustomYearDetails = async(req, res)=> {
+  const getUserCustomYearDetails = async (req, res) => {
     const { user: userEmail, year = 2024 } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
     }
     try {
-      // Fetch total expense and total income concurrently
-
       const income = await fundsModel.getUserCurrentYearData(userEmail, year)
       const expense = await costModel.getUserCurrentYearData(userEmail, year)
 
-      // Combine results into an array
-      const result = { income, expense};
+      const totalIncome = income.reduce((p,n)=> p+n, 0);
+      const totalExpense = expense.reduce((p,n)=> p+n, 0);
 
-      // Log and send the response
-      res.json({
-        status: "Success",
-        message: 'Executed Successfully',
-        result: result
-      })
+      const total = totalIncome + totalExpense;
+
+      const incomePercentage = Math.round(totalIncome/total * 100);
+      const expensePercentage = Math.round(totalExpense/total * 100);
+      
+
+      // Combine results into an array
+      if (income && expense) {
+        const result = { income, expense, incomePercentage, expensePercentage };
+        // Log and send the response
+        res.json({
+          status: "Success",
+          message: 'Executed Successfully',
+          result: result
+        })
+      }
     } catch (err) {
       console.error('Error getting Data By User Email:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
