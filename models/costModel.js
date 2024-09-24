@@ -260,12 +260,6 @@ function costModel() {
     try {
       collection = await getCollection();
   
-      // Define an array of month names
-      const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-      ];
-  
       // Array to hold results
       const resultData = [];
   
@@ -298,7 +292,7 @@ function costModel() {
         const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
   
         // Push the month and money into the resultData array
-        resultData.push({[monthNames[month - 1]]: totalMoney });
+        resultData.push(totalMoney);
       }
   
       return resultData;
