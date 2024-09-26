@@ -113,13 +113,17 @@ function costModel() {
   }
 
   // Get Cost By User Email
-  const getCostsByUserEmail = async (userEmail, page = 1, limit = 20) => {
+  const getCostsByUserEmail = async (userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc') => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
-      const costs = await collection.find({ user: userEmail }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ user: userEmail }).toArray(); // Get the total count of documents
+      const sort = {};
+      sort[sort_by] = sort_order === 'asc' ? 1 : -1;
+      console.log('sort', sort);
+      
+      const costs = await collection.find({ user: userEmail }).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find({ user: userEmail }).toArray(); 
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
