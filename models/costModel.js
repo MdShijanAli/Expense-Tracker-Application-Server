@@ -1,9 +1,14 @@
-const connection = require("../config/database");
+const {client} = require("../config/database");
 const { ObjectId } = require('mongodb');
 
 async function getCollection() {
-  await connection.connect();
-  return connection.db(process.env.DB_NAME).collection("costs");
+  // Ensure that the client is connected
+  if (!client.topology || !client.topology.isConnected()) {
+    await client.connect(); // Connect only if not already connected
+  }
+
+  // Return the desired collection
+  return client.db(process.env.DB_NAME).collection("costs");
 }
 
 function costModel() {
@@ -23,9 +28,7 @@ function costModel() {
       return costs
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
-    }
+    } 
   }
 
   // Update a Cost
@@ -63,8 +66,6 @@ function costModel() {
       return cost
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -79,9 +80,7 @@ function costModel() {
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
-    }
+    } 
   }
 
   // Get Cost By ID
@@ -93,9 +92,7 @@ function costModel() {
       return cost
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
-    }
+    } 
   }
 
   // Delete Cost By ID
@@ -107,8 +104,6 @@ function costModel() {
       return cost
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -127,9 +122,7 @@ function costModel() {
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
-    }
+    } 
   }
 
   // Get Cost By User Email
@@ -143,8 +136,6 @@ function costModel() {
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -159,8 +150,6 @@ function costModel() {
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -190,8 +179,6 @@ function costModel() {
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -214,8 +201,6 @@ function costModel() {
       return { costs, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -228,9 +213,7 @@ function costModel() {
       return result.deletedCount; // Return the number of documents deleted
     } catch (err) {
       throw err; // Rethrow the error to be caught in the controller
-    } finally {
-      await connection.close();
-    }
+    } 
   }
 
   // Get Cost By User Email
@@ -254,8 +237,6 @@ function costModel() {
       return { money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -301,8 +282,6 @@ function costModel() {
       return resultData;
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   };  
 
@@ -366,8 +345,6 @@ function costModel() {
       return { month: monthName, money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 

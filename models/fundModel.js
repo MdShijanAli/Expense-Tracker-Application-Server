@@ -1,9 +1,14 @@
-const connection = require("../config/database");
+const {client} = require("../config/database");
 const { ObjectId } = require('mongodb');
 
 async function getCollection() {
-  await connection.connect();
-  return connection.db(process.env.DB_NAME).collection("funds");
+  // Ensure that the client is connected
+  if (!client.topology || !client.topology.isConnected()) {
+    await client.connect(); // Connect only if not already connected
+  }
+
+  // Return the desired collection
+  return client.db(process.env.DB_NAME).collection("costs");
 }
 
 
@@ -22,8 +27,6 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -62,8 +65,6 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -78,8 +79,6 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -92,8 +91,6 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -106,8 +103,6 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -122,8 +117,6 @@ function fundsModel() {
       return { funds, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -138,8 +131,6 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -153,8 +144,6 @@ function fundsModel() {
     } catch (err) {
       console.log('Error', err);
       throw err; // Rethrow the error to be caught in the controller
-    } finally {
-      await connection.close();
     }
   }
 
@@ -177,8 +166,6 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -194,8 +181,6 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -227,8 +212,6 @@ function fundsModel() {
     } catch (err) {
       console.error('Error:', err);
       throw err; // Rethrow error to handle it in the calling function
-    } finally {
-      await connection.close();
     }
   }
 
@@ -252,8 +235,6 @@ function fundsModel() {
       return { money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -317,8 +298,6 @@ function fundsModel() {
       return { month: monthName, money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -406,8 +385,6 @@ function fundsModel() {
       return resultData;
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }; 
 
