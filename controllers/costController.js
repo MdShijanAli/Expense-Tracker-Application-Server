@@ -51,7 +51,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getAllCosts(pageNum, limitNum);
-      const total = result?.total?.length;
+      const total = result?.total;
 
       formatResultData({
         res,
@@ -123,7 +123,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostsByUserEmail(userEmail, pageNum, limitNum, sort_by, sort_order, search);
-      const total = result?.total?.length;
+      const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
           res,
@@ -156,7 +156,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostsByCategory(category, pageNum, limitNum);
-      const total = result?.total?.length;
+      const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
           res,
@@ -190,7 +190,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostsByCategoryByUser(category, userEmail, pageNum, limitNum);
-      const total = result?.total?.length;
+      const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
           res,
@@ -223,7 +223,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostCategoryWithValue(userEmail, pageNum, limitNum);
-      const total = result?.total?.length;
+      const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
           res,
@@ -278,7 +278,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostsByDate(start_date, end_date, userEmail, pageNum, limitNum);
-      const total = result?.total?.length;
+      const total = result?.total;
       if (result?.costs?.length > 0) {
         formatResultData({
           res,

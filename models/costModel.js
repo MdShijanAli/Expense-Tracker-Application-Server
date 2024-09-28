@@ -76,7 +76,7 @@ function costModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const costs = await collection.find({}).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({}).toArray(); // Get the total count of documents
+      const total = await collection.find({}).count(); // Get the total count of documents
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
@@ -132,7 +132,7 @@ function costModel() {
       console.log('Query:', query); // For debugging purposes
 
       const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
-      const total = await collection.find(query).toArray();
+      const total = await collection.find(query).count();
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
@@ -146,7 +146,7 @@ function costModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const costs = await collection.find({ category: category }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ category: category }).toArray(); // Get the total count of documents
+      const total = await collection.find({ category: category }).count(); // Get the total count of documents
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
@@ -160,7 +160,7 @@ function costModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const costs = await collection.find({ category: category, user: user }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ category: category, user: user }).toArray(); // Get the total count of documents
+      const total = await collection.find({ category: category, user: user }).count(); // Get the total count of documents
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
@@ -188,7 +188,7 @@ function costModel() {
         { $limit: limit } // Limit the number of documents
       ];
       const costs = await collection.aggregate(pipeline).toArray();
-      const total = await collection.aggregate(totalPipeline).toArray();
+      const total = await collection.aggregate(totalPipeline).count();
 
       return { costs, total };
     } catch (err) {
@@ -211,7 +211,7 @@ function costModel() {
         }
       };
       const costs = await collection.find(query).sort({ date: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find(query).toArray();
+      const total = await collection.find(query).count();
       return { costs, total }
     } catch (err) {
       console.log('Error', err);
