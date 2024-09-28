@@ -107,13 +107,44 @@ function fundsModel() {
   }
 
   // Get Fund By User Email
-  const getFundsByUserEmail = async (userEmail, page = 1, limit = 20) => {
+/*   const getFundsByUserEmail = async (userEmail, page = 1, limit = 20) => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const funds = await collection.find({ user: userEmail }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
       const total = await collection.find({ user: userEmail }).toArray(); // Get the total count of documents
+      return { funds, total };
+    } catch (err) {
+      console.log('Error', err);
+    }
+  } */
+
+  const getFundsByUserEmail = async (userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "") => {
+    let collection;
+    try {
+      collection = await getCollection();
+      const skip = (page - 1) * limit
+      const sort = {};
+      sort[sort_by] = sort_order === 'asc' ? 1 : -1;
+
+      const query = { user: userEmail };
+
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
+          { money: { $regex: search, $options: 'i' } },
+          { notes: { $regex: search, $options: 'i' } }, 
+          { time: { $regex: search, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      console.log('Query:', query); // For debugging purposes
+
+      const funds = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).toArray();
       return { funds, total };
     } catch (err) {
       console.log('Error', err);
