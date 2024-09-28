@@ -24,7 +24,7 @@ function calculationController() {
 
       if (totalExpense && currentMonthExpense && prevMonthMonthExpense && totalIncome && currentMonthFund && prevMonthFund) {
 
-        const restFund = totalIncome?.money - totalExpense?.money
+        const restFund = { money: totalIncome?.money - totalExpense?.money}
         console.log('Rest FUnd', restFund);
         
 

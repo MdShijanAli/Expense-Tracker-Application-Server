@@ -1,4 +1,4 @@
-const {client} = require("../config/database");
+const { client } = require("../config/database");
 const { ObjectId } = require('mongodb');
 
 async function getCollection() {
@@ -28,7 +28,7 @@ function costModel() {
       return costs
     } catch (err) {
       console.log('Error', err);
-    } 
+    }
   }
 
   // Update a Cost
@@ -80,7 +80,7 @@ function costModel() {
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } 
+    }
   }
 
   // Get Cost By ID
@@ -92,7 +92,7 @@ function costModel() {
       return cost
     } catch (err) {
       console.log('Error', err);
-    } 
+    }
   }
 
   // Delete Cost By ID
@@ -108,21 +108,35 @@ function costModel() {
   }
 
   // Get Cost By User Email
-  const getCostsByUserEmail = async (userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc') => {
+  const getCostsByUserEmail = async (userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "") => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const sort = {};
       sort[sort_by] = sort_order === 'asc' ? 1 : -1;
-      console.log('sort', sort);
-      
-      const costs = await collection.find({ user: userEmail }).sort(sort).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ user: userEmail }).toArray(); 
+
+      const query = { user: userEmail };
+
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
+          { money: { $regex: search, $options: 'i' } },
+          { notes: { $regex: search, $options: 'i' } }, 
+          { time: { $regex: search, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      console.log('Query:', query); // For debugging purposes
+
+      const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).toArray();
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } 
+    }
   }
 
   // Get Cost By User Email
@@ -213,7 +227,7 @@ function costModel() {
       return result.deletedCount; // Return the number of documents deleted
     } catch (err) {
       throw err; // Rethrow the error to be caught in the controller
-    } 
+    }
   }
 
   // Get Cost By User Email
@@ -244,17 +258,17 @@ function costModel() {
     let collection;
     try {
       collection = await getCollection();
-  
+
       // Array to hold results
       const resultData = [];
-  
+
       // Loop through all months of the specified year
       for (let month = 1; month <= 12; month++) {
         // Format the month with leading zero if necessary
         const formattedMonth = String(month).padStart(2, '0');
-        
-        const startDate = `${year}-${formattedMonth}-01`;
-        const endDate = `${year}-${formattedMonth}-31`;
+
+        const startDate = `${ year }-${ formattedMonth }-01`;
+        const endDate = `${ year }-${ formattedMonth }-31`;
 
         // Aggregation pipeline to calculate total money for each month
         const pipeline = [
@@ -269,21 +283,21 @@ function costModel() {
           }, // Filter documents by user and date range
           { $group: { _id: null, totalMoney: { $sum: "$money" } } }
         ];
-  
+
         const result = await collection.aggregate(pipeline).toArray();
-  
+
         // Extract the total money value from the result
         const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
-  
+
         // Push the month and money into the resultData array
         resultData.push(totalMoney);
       }
-  
+
       return resultData;
     } catch (err) {
       console.log('Error', err);
     }
-  };  
+  };
 
   const getAMonthUserTotalCostAmount = async (userEmail, currentMonth) => {
     let collection;

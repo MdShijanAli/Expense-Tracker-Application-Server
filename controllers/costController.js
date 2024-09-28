@@ -113,7 +113,7 @@ function costController() {
 
   // Get Costs By User Email
   const getCostsByUserEmail = async (req, res) => {
-    const { user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc' } = req.query;
+    const { user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search= "" } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
@@ -122,7 +122,7 @@ function costController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await costModel.getCostsByUserEmail(userEmail, pageNum, limitNum, sort_by, sort_order);
+      const result = await costModel.getCostsByUserEmail(userEmail, pageNum, limitNum, sort_by, sort_order, search);
       const total = result?.total?.length;
       if (result?.costs.length > 0) {
         formatResultData({
