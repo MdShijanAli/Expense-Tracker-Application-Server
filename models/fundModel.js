@@ -8,7 +8,7 @@ async function getCollection() {
   }
 
   // Return the desired collection
-  return client.db(process.env.DB_NAME).collection("costs");
+  return client.db(process.env.DB_NAME).collection("funds");
 }
 
 
