@@ -274,7 +274,7 @@ function fundsController() {
   // Get a user all category name and Money
   const getFundCategoryWithValue = async (req, res) => {
 
-    const { user: userEmail, page = 1, limit = 20 } = req.query;
+    const { user: userEmail, page = 1, limit = 20, search = "" } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
@@ -283,7 +283,7 @@ function fundsController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await fundsModel.getFundCategoryWithValue(userEmail, pageNum, limitNum);
+      const result = await fundsModel.getFundCategoryWithValue(userEmail, pageNum, limitNum, search);
       const total = result?.total?.length;
       if (result?.funds?.length > 0) {
         formatResultData({

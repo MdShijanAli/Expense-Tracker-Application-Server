@@ -127,8 +127,6 @@ function fundsModel() {
         ];
       }
 
-      console.log('Query:', query); // For debugging purposes
-
       const funds = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
       const total = await collection.find(query).toArray();
       return { funds, total };
@@ -202,35 +200,54 @@ function fundsModel() {
   }
 
 
-  const getFundCategoryWithValue = async (user, page = 1, limit = 20) => {
+  const getFundCategoryWithValue = async (user, page = 1, limit = 20, search = "") => {
     let collection;
     try {
       collection = await getCollection();
-      const skip = (page - 1) * limit
-
+      const skip = (page - 1) * limit;
+  
+      // Query object
+      const query = { user: user };
+  
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, 
+        ];
+  
+        // If the search term is a number, include a condition to search on money
+        const searchAsNumber = parseFloat(search);
+        if (!isNaN(searchAsNumber)) {
+          query.$or.push({ money: searchAsNumber });
+        }
+      }
+  
       // Initial aggregation pipeline to get the total count
       const totalPipeline = [
-        { $match: { user: user } }, // Filter documents by user
+        { $match: query }, 
         { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
       ];
-
-      // Aggregation pipeline with limit and skip
+  
       const pipeline = [
-        { $match: { user: user } }, // Filter documents by user
+        { $match: query },
         { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
-        { $sort: { name: 1 } }, // Sort by category name
-        { $skip: skip }, // Skip documents for pagination
-        { $limit: limit } // Limit the number of documents
+        { $sort: { name: 1 } },
+        { $skip: skip },
+        { $limit: limit }
       ];
-
+  
+      // Execute both pipelines
       const funds = await collection.aggregate(pipeline).toArray();
       const total = await collection.aggregate(totalPipeline).toArray();
+  
+      // Return funds and total count
       return { funds, total };
     } catch (err) {
       console.error('Error:', err);
       throw err; // Rethrow error to handle it in the calling function
     }
-  }
+  };
+  
 
   // Get Cost By User Email
   const getUserTotalFundAmount = async (userEmail) => {
