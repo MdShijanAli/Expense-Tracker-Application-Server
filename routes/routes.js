@@ -20,7 +20,7 @@ router.get('/api/funds/details/:id', fundsController.getFundByID);
 router.get('/api/funds/user-funds', fundsController.getFundsByUserEmail);
 router.get('/api/funds/fund-category', fundsController.getFundsByCategory);
 router.get('/api/funds/date-funds', fundsController.getFundsByDate);
-router.get('/api/funds/user-fund-category', fundsController.getFundsByCategoryAndUser);
+router.get('/api/funds/user-fund-category', fundsController.getUserSingleFundCategoryDataLists);
 router.get('/api/funds/user-all-fund-category/lists', fundsController.getFundCategoryWithValue);
 router.get('/api/funds/user-year-fund', fundsController.getAYearTotalFunds);
 router.delete('/api/funds/delete', fundsController.deleteFundByID);
