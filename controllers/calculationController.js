@@ -1,5 +1,5 @@
 const fundsModel = require('../models/fundModel')();
-const costModel = require('./../models/costModel')();
+const costModel = require('../models/costModel')();
 
 function calculationController() {
 
@@ -20,21 +20,24 @@ function calculationController() {
       const totalIncome = await fundsModel.getUserTotalFundAmount(userEmail)
       const currentMonthFund = await fundsModel.getAMonthUserTotalFundAmount(userEmail, true)
       const prevMonthFund = await fundsModel.getAMonthUserTotalFundAmount(userEmail, false)
-      const restFund = { money: totalIncome?.money - totalExpense?.money }
 
 
-      if(totalExpense && currentMonthExpense && prevMonthMonthExpense && totalIncome && currentMonthFund && prevMonthFund && restFund){
+      if (totalExpense && currentMonthExpense && prevMonthMonthExpense && totalIncome && currentMonthFund && prevMonthFund) {
 
-      // Combine results into an array
-      const result = { totalExpense, totalIncome, currentMonthExpense, prevMonthMonthExpense, currentMonthFund, prevMonthFund, restFund };
+        const restFund = { money: totalIncome?.money - totalExpense?.money}
+        console.log('Rest FUnd', restFund);
+        
 
-      // Log and send the response
-      res.json({
-        status: "Success",
-        message: 'Executed Successfully',
-        result: result
-      })
-    }
+        // Combine results into an array
+        const result = { totalExpense, totalIncome, currentMonthExpense, prevMonthMonthExpense, currentMonthFund, prevMonthFund, restFund };
+
+        // Log and send the response
+        res.json({
+          status: "Success",
+          message: 'Executed Successfully',
+          result: result
+        })
+      }
     } catch (err) {
       console.error('Error getting Data By User Email:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
@@ -51,14 +54,17 @@ function calculationController() {
       const income = await fundsModel.getUserCurrentYearData(userEmail, year)
       const expense = await costModel.getUserCurrentYearData(userEmail, year)
 
-      const totalIncome = income.reduce((p,n)=> p+n, 0);
-      const totalExpense = expense.reduce((p,n)=> p+n, 0);
+      console.log('Income', income);
+      
+
+      const totalIncome = income?.total;
+      const totalExpense = expense?.total;
 
       const total = totalIncome + totalExpense;
 
-      const incomePercentage = Math.round(totalIncome/total * 100);
-      const expensePercentage = Math.round(totalExpense/total * 100);
-      
+      const incomePercentage = Math.round(totalIncome / total * 100);
+      const expensePercentage = Math.round(totalExpense / total * 100);
+
 
       // Combine results into an array
       if (income && expense) {

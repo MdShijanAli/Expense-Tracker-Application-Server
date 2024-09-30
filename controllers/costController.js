@@ -1,3 +1,4 @@
+const userModel = require('../models/userModel')();
 const formatResultData = require('../utils/formatResultsData');
 const costModel = require('./../models/costModel')();
 
@@ -51,7 +52,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getAllCosts(pageNum, limitNum);
-      const total = result?.total?.length;
+      const total = result?.total;
 
       formatResultData({
         res,
@@ -113,7 +114,7 @@ function costController() {
 
   // Get Costs By User Email
   const getCostsByUserEmail = async (req, res) => {
-    const { user: userEmail, page = 1, limit = 20 } = req.query;
+    const { user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "" } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
@@ -122,8 +123,8 @@ function costController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await costModel.getCostsByUserEmail(userEmail, pageNum, limitNum);
-      const total = result?.total?.length;
+      const result = await costModel.getCostsByUserEmail(userEmail, pageNum, limitNum, sort_by, sort_order, search);
+      const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
           res,
@@ -136,10 +137,13 @@ function costController() {
           totalResults: total
         })
       } else {
-        res.status(404).json({ status: 'not found', message: 'Costs not found' });
+/*         const userExists = await userModel.getUserByEmail(userEmail);
+        if (!userExists) {
+          return res.status(404).json({ status: 'error', message: 'User does not exist' });
+        } */
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: result?.costs } });
       }
     } catch (err) {
-      console.error('Error getting Cost By User Email:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   }
@@ -156,7 +160,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostsByCategory(category, pageNum, limitNum);
-      const total = result?.total?.length;
+      const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
           res,
@@ -190,7 +194,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostsByCategoryByUser(category, userEmail, pageNum, limitNum);
-      const total = result?.total?.length;
+      const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
           res,
@@ -223,7 +227,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostCategoryWithValue(userEmail, pageNum, limitNum);
-      const total = result?.total?.length;
+      const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
           res,
@@ -278,7 +282,7 @@ function costController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await costModel.getCostsByDate(start_date, end_date, userEmail, pageNum, limitNum);
-      const total = result?.total?.length;
+      const total = result?.total;
       if (result?.costs?.length > 0) {
         formatResultData({
           res,

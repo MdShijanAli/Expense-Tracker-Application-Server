@@ -115,7 +115,7 @@ function fundsController() {
 
   // Get FUnds By User Email
   const getFundsByUserEmail = async (req, res) => {
-    const { user: userEmail, page = 1, limit = 20 } = req.query;
+    const { user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search= "" } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
@@ -124,7 +124,7 @@ function fundsController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await fundsModel.getFundsByUserEmail(userEmail, pageNum, limitNum);
+      const result = await fundsModel.getFundsByUserEmail(userEmail, pageNum, limitNum, sort_by, sort_order, search);
       const total = result?.total?.length;
       if (result?.funds?.length > 0) {
         formatResultData({
@@ -138,7 +138,7 @@ function fundsController() {
           totalResults: total
         })
       } else {
-        res.status(404).json({ status: 'not found', message: 'Fund not found' });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: {data: result?.funds} });
       }
     } catch (err) {
       console.error('Error getting Fund By ID:', err);
@@ -274,7 +274,7 @@ function fundsController() {
   // Get a user all category name and Money
   const getFundCategoryWithValue = async (req, res) => {
 
-    const { user: userEmail, page = 1, limit = 20 } = req.query;
+    const { user: userEmail, page = 1, limit = 20, search = "" } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
@@ -283,7 +283,7 @@ function fundsController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await fundsModel.getFundCategoryWithValue(userEmail, pageNum, limitNum);
+      const result = await fundsModel.getFundCategoryWithValue(userEmail, pageNum, limitNum, search);
       const total = result?.total?.length;
       if (result?.funds?.length > 0) {
         formatResultData({

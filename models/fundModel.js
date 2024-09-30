@@ -1,9 +1,14 @@
-const connection = require("../config/database");
+const {client} = require("../config/database");
 const { ObjectId } = require('mongodb');
 
 async function getCollection() {
-  await connection.connect();
-  return connection.db(process.env.DB_NAME).collection("funds");
+  // Ensure that the client is connected
+  if (!client.topology || !client.topology.isConnected()) {
+    await client.connect(); // Connect only if not already connected
+  }
+
+  // Return the desired collection
+  return client.db(process.env.DB_NAME).collection("funds");
 }
 
 
@@ -22,8 +27,6 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -62,8 +65,6 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -78,8 +79,6 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -92,8 +91,6 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -106,24 +103,35 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
-  // Get Fund By User Email
-  const getFundsByUserEmail = async (userEmail, page = 1, limit = 20) => {
+  const getFundsByUserEmail = async (userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "") => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
-      const funds = await collection.find({ user: userEmail }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ user: userEmail }).toArray(); // Get the total count of documents
+      const sort = {};
+      sort[sort_by] = sort_order === 'asc' ? 1 : -1;
+
+      const query = { user: userEmail };
+
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
+          { money: { $regex: search, $options: 'i' } },
+          { notes: { $regex: search, $options: 'i' } }, 
+          { time: { $regex: search, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      const funds = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).toArray();
       return { funds, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -138,8 +146,6 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -153,8 +159,6 @@ function fundsModel() {
     } catch (err) {
       console.log('Error', err);
       throw err; // Rethrow the error to be caught in the controller
-    } finally {
-      await connection.close();
     }
   }
 
@@ -177,8 +181,6 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -194,43 +196,58 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
 
-  const getFundCategoryWithValue = async (user, page = 1, limit = 20) => {
+  const getFundCategoryWithValue = async (user, page = 1, limit = 20, search = "") => {
     let collection;
     try {
       collection = await getCollection();
-      const skip = (page - 1) * limit
-
+      const skip = (page - 1) * limit;
+  
+      // Query object
+      const query = { user: user };
+  
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, 
+        ];
+  
+        // If the search term is a number, include a condition to search on money
+        const searchAsNumber = parseFloat(search);
+        if (!isNaN(searchAsNumber)) {
+          query.$or.push({ money: searchAsNumber });
+        }
+      }
+  
       // Initial aggregation pipeline to get the total count
       const totalPipeline = [
-        { $match: { user: user } }, // Filter documents by user
+        { $match: query }, 
         { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
       ];
-
-      // Aggregation pipeline with limit and skip
+  
       const pipeline = [
-        { $match: { user: user } }, // Filter documents by user
+        { $match: query },
         { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
-        { $sort: { name: 1 } }, // Sort by category name
-        { $skip: skip }, // Skip documents for pagination
-        { $limit: limit } // Limit the number of documents
+        { $sort: { name: 1 } },
+        { $skip: skip },
+        { $limit: limit }
       ];
-
+  
+      // Execute both pipelines
       const funds = await collection.aggregate(pipeline).toArray();
       const total = await collection.aggregate(totalPipeline).toArray();
+  
+      // Return funds and total count
       return { funds, total };
     } catch (err) {
       console.error('Error:', err);
       throw err; // Rethrow error to handle it in the calling function
-    } finally {
-      await connection.close();
     }
-  }
+  };
+  
 
   // Get Cost By User Email
   const getUserTotalFundAmount = async (userEmail) => {
@@ -252,8 +269,6 @@ function fundsModel() {
       return { money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -317,8 +332,6 @@ function fundsModel() {
       return { month: monthName, money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -358,8 +371,6 @@ function fundsModel() {
       return sortedMonthlyTotals ;
     } catch (err) {
       console.log('Error', err);
-    } finally {
-       if (connection) await connection.close();
     }
   };
   
@@ -371,6 +382,8 @@ function fundsModel() {
   
       // Array to hold results
       const resultData = [];
+
+      let totalSum = 0;
   
       // Loop through all months of the specified year
       for (let month = 1; month <= 12; month++) {
@@ -398,16 +411,16 @@ function fundsModel() {
   
         // Extract the total money value from the result
         const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
+
+        totalSum += totalMoney
   
         // Push the month and money into the resultData array
         resultData.push(totalMoney);
       }
   
-      return resultData;
+      return {resultData, total: totalSum};
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }; 
 

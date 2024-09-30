@@ -1,9 +1,14 @@
-const connection = require("../config/database");
+const { client } = require("../config/database");
 const { ObjectId } = require('mongodb');
 
 async function getCollection() {
-  await connection.connect();
-  return connection.db(process.env.DB_NAME).collection("costs");
+  // Ensure that the client is connected
+  if (!client.topology || !client.topology.isConnected()) {
+    await client.connect(); // Connect only if not already connected
+  }
+
+  // Return the desired collection
+  return client.db(process.env.DB_NAME).collection("costs");
 }
 
 function costModel() {
@@ -23,8 +28,6 @@ function costModel() {
       return costs
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -63,8 +66,6 @@ function costModel() {
       return cost
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -75,12 +76,10 @@ function costModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const costs = await collection.find({}).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({}).toArray(); // Get the total count of documents
+      const total = await collection.find({}).count(); // Get the total count of documents
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -93,8 +92,6 @@ function costModel() {
       return cost
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -107,24 +104,38 @@ function costModel() {
       return cost
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
   // Get Cost By User Email
-  const getCostsByUserEmail = async (userEmail, page = 1, limit = 20) => {
+  const getCostsByUserEmail = async (userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "") => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
-      const costs = await collection.find({ user: userEmail }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ user: userEmail }).toArray(); // Get the total count of documents
+      const sort = {};
+      sort[sort_by] = sort_order === 'asc' ? 1 : -1;
+
+      const query = { user: userEmail };
+
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
+          { money: { $regex: search, $options: 'i' } },
+          { notes: { $regex: search, $options: 'i' } }, 
+          { time: { $regex: search, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      console.log('Query:', query); // For debugging purposes
+
+      const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).count();
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -135,12 +146,10 @@ function costModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const costs = await collection.find({ category: category }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ category: category }).toArray(); // Get the total count of documents
+      const total = await collection.find({ category: category }).count(); // Get the total count of documents
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -151,12 +160,10 @@ function costModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const costs = await collection.find({ category: category, user: user }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ category: category, user: user }).toArray(); // Get the total count of documents
+      const total = await collection.find({ category: category, user: user }).count(); // Get the total count of documents
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -181,13 +188,11 @@ function costModel() {
         { $limit: limit } // Limit the number of documents
       ];
       const costs = await collection.aggregate(pipeline).toArray();
-      const total = await collection.aggregate(totalPipeline).toArray();
+      const total = await collection.aggregate(totalPipeline).count();
 
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -206,12 +211,10 @@ function costModel() {
         }
       };
       const costs = await collection.find(query).sort({ date: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find(query).toArray();
+      const total = await collection.find(query).count();
       return { costs, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -224,8 +227,6 @@ function costModel() {
       return result.deletedCount; // Return the number of documents deleted
     } catch (err) {
       throw err; // Rethrow the error to be caught in the controller
-    } finally {
-      await connection.close();
     }
   }
 
@@ -250,8 +251,6 @@ function costModel() {
       return { money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -259,17 +258,19 @@ function costModel() {
     let collection;
     try {
       collection = await getCollection();
-  
+
       // Array to hold results
       const resultData = [];
-  
+
+      let totalCost = 0;
+
       // Loop through all months of the specified year
       for (let month = 1; month <= 12; month++) {
         // Format the month with leading zero if necessary
         const formattedMonth = String(month).padStart(2, '0');
-        
-        const startDate = `${year}-${formattedMonth}-01`;
-        const endDate = `${year}-${formattedMonth}-31`;
+
+        const startDate = `${ year }-${ formattedMonth }-01`;
+        const endDate = `${ year }-${ formattedMonth }-31`;
 
         // Aggregation pipeline to calculate total money for each month
         const pipeline = [
@@ -284,23 +285,23 @@ function costModel() {
           }, // Filter documents by user and date range
           { $group: { _id: null, totalMoney: { $sum: "$money" } } }
         ];
-  
+
         const result = await collection.aggregate(pipeline).toArray();
-  
+
         // Extract the total money value from the result
         const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
-  
+
+        totalCost += totalMoney
+
         // Push the month and money into the resultData array
         resultData.push(totalMoney);
       }
-  
-      return resultData;
+
+      return {resultData, total: totalCost};
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
-  };  
+  };
 
   const getAMonthUserTotalCostAmount = async (userEmail, currentMonth) => {
     let collection;
@@ -362,8 +363,6 @@ function costModel() {
       return { month: monthName, money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
