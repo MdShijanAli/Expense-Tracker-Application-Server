@@ -54,8 +54,11 @@ function calculationController() {
       const income = await fundsModel.getUserCurrentYearData(userEmail, year)
       const expense = await costModel.getUserCurrentYearData(userEmail, year)
 
-      const totalIncome = income?.reduce((p, n) => p + n, 0);
-      const totalExpense = expense?.reduce((p, n) => p + n, 0);
+      console.log('Income', income);
+      
+
+      const totalIncome = income?.total;
+      const totalExpense = expense?.total;
 
       const total = totalIncome + totalExpense;
 

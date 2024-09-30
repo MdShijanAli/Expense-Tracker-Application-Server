@@ -1,3 +1,4 @@
+const userModel = require('../models/userModel')();
 const formatResultData = require('../utils/formatResultsData');
 const costModel = require('./../models/costModel')();
 
@@ -113,7 +114,7 @@ function costController() {
 
   // Get Costs By User Email
   const getCostsByUserEmail = async (req, res) => {
-    const { user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search= "" } = req.query;
+    const { user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "" } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
@@ -136,10 +137,13 @@ function costController() {
           totalResults: total
         })
       } else {
-        res.status(404).json({ status: 'not found', message: 'Costs not found' });
+/*         const userExists = await userModel.getUserByEmail(userEmail);
+        if (!userExists) {
+          return res.status(404).json({ status: 'error', message: 'User does not exist' });
+        } */
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: result?.costs } });
       }
     } catch (err) {
-      console.error('Error getting Cost By User Email:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   }

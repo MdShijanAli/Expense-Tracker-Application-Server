@@ -262,6 +262,8 @@ function costModel() {
       // Array to hold results
       const resultData = [];
 
+      let totalCost = 0;
+
       // Loop through all months of the specified year
       for (let month = 1; month <= 12; month++) {
         // Format the month with leading zero if necessary
@@ -289,11 +291,13 @@ function costModel() {
         // Extract the total money value from the result
         const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
 
+        totalCost += totalMoney
+
         // Push the month and money into the resultData array
         resultData.push(totalMoney);
       }
 
-      return resultData;
+      return {resultData, total: totalCost};
     } catch (err) {
       console.log('Error', err);
     }

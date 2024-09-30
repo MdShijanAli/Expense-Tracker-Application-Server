@@ -106,20 +106,6 @@ function fundsModel() {
     }
   }
 
-  // Get Fund By User Email
-/*   const getFundsByUserEmail = async (userEmail, page = 1, limit = 20) => {
-    let collection;
-    try {
-      collection = await getCollection();
-      const skip = (page - 1) * limit
-      const funds = await collection.find({ user: userEmail }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ user: userEmail }).toArray(); // Get the total count of documents
-      return { funds, total };
-    } catch (err) {
-      console.log('Error', err);
-    }
-  } */
-
   const getFundsByUserEmail = async (userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "") => {
     let collection;
     try {
@@ -368,8 +354,6 @@ function fundsModel() {
       return sortedMonthlyTotals ;
     } catch (err) {
       console.log('Error', err);
-    } finally {
-       if (connection) await connection.close();
     }
   };
   
@@ -381,6 +365,8 @@ function fundsModel() {
   
       // Array to hold results
       const resultData = [];
+
+      let totalSum = 0;
   
       // Loop through all months of the specified year
       for (let month = 1; month <= 12; month++) {
@@ -408,12 +394,14 @@ function fundsModel() {
   
         // Extract the total money value from the result
         const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
+
+        totalSum += totalMoney
   
         // Push the month and money into the resultData array
         resultData.push(totalMoney);
       }
   
-      return resultData;
+      return {resultData, total: totalSum};
     } catch (err) {
       console.log('Error', err);
     }

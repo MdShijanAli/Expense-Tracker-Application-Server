@@ -138,7 +138,7 @@ function fundsController() {
           totalResults: total
         })
       } else {
-        res.status(404).json({ status: 'not found', message: 'Fund not found' });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: {data: result?.funds} });
       }
     } catch (err) {
       console.error('Error getting Fund By ID:', err);
