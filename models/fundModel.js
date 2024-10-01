@@ -186,7 +186,7 @@ function fundsModel() {
 
 
   // Get Fund Category for specific user
-  const getFundsByCategoryAndUser = async (category, userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "") => {
+  const getFundsByCategoryAndUser = async (category, userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
     let collection;
     try {
       collection = await getCollection();
@@ -194,7 +194,14 @@ function fundsModel() {
       const sort = {};
       sort[sort_by] = sort_order === 'asc' ? 1 : -1;
 
-      const query = { user: userEmail, category: category };
+      const query = {
+        user: userEmail,
+        category: category,
+        date: {
+          $gte: startDate,
+          $lte: endDate
+        }
+      };
 
       // Add search condition if search term is provided
       if (search) {

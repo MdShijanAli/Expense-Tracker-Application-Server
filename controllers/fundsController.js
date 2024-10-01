@@ -240,7 +240,7 @@ function fundsController() {
   // Get Funds Category for Specific User
   const getFundsByCategoryAndUser = async (req, res) => {
 
-    const { category_name: category, user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "" } = req.query;
+    const { category_name: category, user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", start_date, end_date, } = req.query;
 
     if (!category && !userEmail) {
       return res.status(400).json({ status: 'error', message: 'Category and User is required' });
@@ -249,7 +249,7 @@ function fundsController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await fundsModel.getFundsByCategoryAndUser(category, userEmail, pageNum, limitNum, sort_by, sort_order, search);
+      const result = await fundsModel.getFundsByCategoryAndUser(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
       const total = result?.total?.length;
       if (result?.funds?.length > 0) {
         formatResultData({
