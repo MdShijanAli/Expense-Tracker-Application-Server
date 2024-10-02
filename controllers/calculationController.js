@@ -1,3 +1,5 @@
+const formatNumbersWithCommas = require('../utils/formatNumberWithCommas');
+
 const fundsModel = require('../models/fundModel')();
 const costModel = require('../models/costModel')();
 
@@ -24,12 +26,28 @@ function calculationController() {
 
       if (totalExpense && currentMonthExpense && prevMonthMonthExpense && totalIncome && currentMonthFund && prevMonthFund) {
 
-        const restFund = { money: totalIncome?.money - totalExpense?.money}
+        const restFund = { money: totalIncome?.money - totalExpense?.money }
         console.log('Rest FUnd', restFund);
-        
 
-        // Combine results into an array
-        const result = { totalExpense, totalIncome, currentMonthExpense, prevMonthMonthExpense, currentMonthFund, prevMonthFund, restFund };
+        // Format all money values
+        const formattedTotalExpense = { ...totalExpense, money: formatNumbersWithCommas(totalExpense?.money) };
+        const formattedCurrentMonthExpense = { ...currentMonthExpense, money: formatNumbersWithCommas(currentMonthExpense?.money) };
+        const formattedPrevMonthExpense = { ...prevMonthMonthExpense, money: formatNumbersWithCommas(prevMonthMonthExpense?.money) };
+        const formattedTotalIncome = { ...totalIncome, money: formatNumbersWithCommas(totalIncome?.money) };
+        const formattedCurrentMonthFund = { ...currentMonthFund, money: formatNumbersWithCommas(currentMonthFund?.money) };
+        const formattedPrevMonthFund = { ...prevMonthFund, money: formatNumbersWithCommas(prevMonthFund?.money) };
+        const formattedRestFund = { money: formatNumbersWithCommas(restFund.money) };
+
+        // Combine formatted results into an array
+        const result = {
+          totalExpense: formattedTotalExpense,
+          totalIncome: formattedTotalIncome,
+          currentMonthExpense: formattedCurrentMonthExpense,
+          prevMonthMonthExpense: formattedPrevMonthExpense,
+          currentMonthFund: formattedCurrentMonthFund,
+          prevMonthFund: formattedPrevMonthFund,
+          restFund: formattedRestFund
+        };
 
         // Log and send the response
         res.json({
@@ -55,7 +73,7 @@ function calculationController() {
       const expense = await costModel.getUserCurrentYearData(userEmail, year)
 
       console.log('Income', income);
-      
+
 
       const totalIncome = income?.total;
       const totalExpense = expense?.total;
@@ -68,7 +86,19 @@ function calculationController() {
 
       // Combine results into an array
       if (income && expense) {
-        const result = { income, expense, incomePercentage, expensePercentage };
+
+
+        // Format all money values
+        const formattedIncome = { ...income, total: formatNumbersWithCommas(income?.total) };
+        const formattedExpense = { ...expense, total: formatNumbersWithCommas(income?.total) };
+
+
+        const result = { 
+          income: formattedIncome, 
+          expense: formattedExpense, 
+          incomePercentage, 
+          expensePercentage 
+        };
         // Log and send the response
         res.json({
           status: "Success",

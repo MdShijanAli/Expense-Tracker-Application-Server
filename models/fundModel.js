@@ -197,11 +197,15 @@ function fundsModel() {
       const query = {
         user: userEmail,
         category: category,
-        date: {
-          $gte: startDate,
-          $lte: endDate
-        }
       };
+
+      // Add date range filter only if both startDate and endDate are provided
+    if (startDate && endDate) {
+      query.date = {
+        $gte: startDate,
+        $lte: endDate
+      };
+    }
 
       // Add search condition if search term is provided
       if (search) {
