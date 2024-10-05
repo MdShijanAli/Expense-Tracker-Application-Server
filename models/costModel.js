@@ -154,13 +154,40 @@ function costModel() {
   }
 
   // Get Cost By User Email
-  const getCostsByCategoryByUser = async (category, user, page = 1, limit = 20) => {
+  const getCostsByCategoryByUser = async (category, userEmail, page = 1, limit = 20,  sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
-      const costs = await collection.find({ category: category, user: user }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ category: category, user: user }).count(); // Get the total count of documents
+      const sort = {};
+      sort[sort_by] = sort_order === 'asc' ? 1 : -1;
+
+      const query = {
+        user: userEmail,
+        category: category,
+      };
+
+       // Add date range filter only if both startDate and endDate are provided
+    if (startDate && endDate) {
+      query.date = {
+        $gte: startDate,
+        $lte: endDate
+      };
+    }
+
+    // Add search condition if search term is provided
+    if (search) {
+      query.$or = [
+        { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
+        { money: { $regex: search, $options: 'i' } },
+        { notes: { $regex: search, $options: 'i' } },
+        { time: { $regex: search, $options: 'i' } },
+        { date: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+      const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).toArray();
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
