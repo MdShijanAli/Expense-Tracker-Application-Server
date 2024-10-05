@@ -1,4 +1,4 @@
-const {client} = require("../config/database");
+const { client } = require("../config/database");
 const { ObjectId } = require('mongodb');
 
 async function getCollection() {
@@ -121,7 +121,7 @@ function fundsModel() {
         query.$or = [
           { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
           { money: { $regex: search, $options: 'i' } },
-          { notes: { $regex: search, $options: 'i' } }, 
+          { notes: { $regex: search, $options: 'i' } },
           { time: { $regex: search, $options: 'i' } },
           { date: { $regex: search, $options: 'i' } }
         ];
@@ -186,13 +186,40 @@ function fundsModel() {
 
 
   // Get Fund Category for specific user
-  const getFundsByCategoryAndUser = async (category, user, page = 1, limit = 20) => {
+  const getFundsByCategoryAndUser = async (category, userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
-      const funds = await collection.find({ category: category, user: user }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ category: category, user: user }).toArray(); // Get the total count of documents
+      const sort = {};
+      sort[sort_by] = sort_order === 'asc' ? 1 : -1;
+
+      const query = {
+        user: userEmail,
+        category: category,
+      };
+
+      // Add date range filter only if both startDate and endDate are provided
+    if (startDate && endDate) {
+      query.date = {
+        $gte: startDate,
+        $lte: endDate
+      };
+    }
+
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
+          { money: { $regex: search, $options: 'i' } },
+          { notes: { $regex: search, $options: 'i' } },
+          { time: { $regex: search, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      const funds = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).toArray(); // Get the total count of documents
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
@@ -205,29 +232,29 @@ function fundsModel() {
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit;
-  
+
       // Query object
       const query = { user: user };
-  
+
       // Add search condition if search term is provided
       if (search) {
         query.$or = [
-          { category: { $regex: search, $options: 'i' } }, 
+          { category: { $regex: search, $options: 'i' } },
         ];
-  
+
         // If the search term is a number, include a condition to search on money
         const searchAsNumber = parseFloat(search);
         if (!isNaN(searchAsNumber)) {
           query.$or.push({ money: searchAsNumber });
         }
       }
-  
+
       // Initial aggregation pipeline to get the total count
       const totalPipeline = [
-        { $match: query }, 
+        { $match: query },
         { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
       ];
-  
+
       const pipeline = [
         { $match: query },
         { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
@@ -235,11 +262,11 @@ function fundsModel() {
         { $skip: skip },
         { $limit: limit }
       ];
-  
+
       // Execute both pipelines
       const funds = await collection.aggregate(pipeline).toArray();
       const total = await collection.aggregate(totalPipeline).toArray();
-  
+
       // Return funds and total count
       return { funds, total };
     } catch (err) {
@@ -247,7 +274,7 @@ function fundsModel() {
       throw err; // Rethrow error to handle it in the calling function
     }
   };
-  
+
 
   // Get Cost By User Email
   const getUserTotalFundAmount = async (userEmail) => {
@@ -344,55 +371,55 @@ function fundsModel() {
 
       // Calculate total money for each month
       const monthlyTotals = {};
-          
+
       // Initialize an object with the months of the current year
       const currentYearMonths = new Array(12).fill(0).map((_, index) => {
-        return `${year}-${(index + 1).toString().padStart(2, '0')}`;
+        return `${ year }-${ (index + 1).toString().padStart(2, '0') }`;
       });
-  
+
       currentYearMonths.forEach(monthYear => {
         monthlyTotals[monthYear] = 0;
       });
-  
+
       funds.forEach(entry => {
         const monthYear = entry.date.substring(0, 7); // Extracting "YYYY-MM"
         if (currentYearMonths.includes(monthYear)) {
           monthlyTotals[monthYear] += entry.money;
         }
       });
-  
+
       // Convert object to array and sort by month
       const sortedMonthlyTotals = Object.entries(monthlyTotals)
         .sort(([a], [b]) => a.localeCompare(b))
         .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
 
-      
-  
-      return sortedMonthlyTotals ;
+
+
+      return sortedMonthlyTotals;
     } catch (err) {
       console.log('Error', err);
     }
   };
-  
+
 
   const getUserCurrentYearData = async (userEmail, year) => {
     let collection;
     try {
       collection = await getCollection();
-  
+
       // Array to hold results
       const resultData = [];
 
       let totalSum = 0;
-  
+
       // Loop through all months of the specified year
       for (let month = 1; month <= 12; month++) {
         // Format the month with leading zero if necessary
         const formattedMonth = String(month).padStart(2, '0');
-        
-        const startDate = `${year}-${formattedMonth}-01`;
-        const endDate = `${year}-${formattedMonth}-31`;
-  
+
+        const startDate = `${ year }-${ formattedMonth }-01`;
+        const endDate = `${ year }-${ formattedMonth }-31`;
+
         // Aggregation pipeline to calculate total money for each month
         const pipeline = [
           {
@@ -406,23 +433,23 @@ function fundsModel() {
           }, // Filter documents by user and date range
           { $group: { _id: null, totalMoney: { $sum: "$money" } } }
         ];
-  
+
         const result = await collection.aggregate(pipeline).toArray();
-  
+
         // Extract the total money value from the result
         const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
 
         totalSum += totalMoney
-  
+
         // Push the month and money into the resultData array
         resultData.push(totalMoney);
       }
-  
-      return {resultData, total: totalSum};
+
+      return { resultData, total: totalSum };
     } catch (err) {
       console.log('Error', err);
     }
-  }; 
+  };
 
 
   return {

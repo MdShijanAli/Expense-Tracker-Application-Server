@@ -115,7 +115,7 @@ function fundsController() {
 
   // Get FUnds By User Email
   const getFundsByUserEmail = async (req, res) => {
-    const { user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search= "" } = req.query;
+    const { user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "" } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
@@ -138,7 +138,7 @@ function fundsController() {
           totalResults: total
         })
       } else {
-        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: {data: result?.funds} });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: result?.funds } });
       }
     } catch (err) {
       console.error('Error getting Fund By ID:', err);
@@ -240,7 +240,7 @@ function fundsController() {
   // Get Funds Category for Specific User
   const getFundsByCategoryAndUser = async (req, res) => {
 
-    const { category_name: category, user: userEmail, page = 1, limit = 20 } = req.query;
+    const { category_name: category, user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", start_date, end_date, } = req.query;
 
     if (!category && !userEmail) {
       return res.status(400).json({ status: 'error', message: 'Category and User is required' });
@@ -249,7 +249,7 @@ function fundsController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await fundsModel.getFundsByCategoryAndUser(category, userEmail, pageNum, limitNum);
+      const result = await fundsModel.getFundsByCategoryAndUser(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
       const total = result?.total?.length;
       if (result?.funds?.length > 0) {
         formatResultData({
@@ -263,7 +263,7 @@ function fundsController() {
           totalResults: total
         })
       } else {
-        res.status(404).json({ status: 'not found', message: 'Funds not found' });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: result?.funds } });
       }
     } catch (err) {
       console.error('Error getting Fund By Category:', err);
@@ -305,14 +305,14 @@ function fundsController() {
     }
   }
 
-  const getAYearTotalFunds = async (req, res)=>{
-     const { user, year} = req.query;
+  const getAYearTotalFunds = async (req, res) => {
+    const { user, year } = req.query;
 
-     if(!user || !year){
+    if (!user || !year) {
       return res.status(400).json({ status: 'error', message: 'User Email and year field is required' });
-     }
+    }
 
-     try{
+    try {
       const yearNum = parseInt(year)
       const result = await fundsModel.getAYearTotalFunds(user, yearNum);
       res.json({
@@ -320,8 +320,8 @@ function fundsController() {
         message: 'Executed Successfully',
         results: result
       })
-     }
-     catch (err) {
+    }
+    catch (err) {
       console.error('Error getting Fund By User or Year:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }

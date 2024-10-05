@@ -184,7 +184,7 @@ function costController() {
 
   // Get Costs Category By User Email
   const getCostsByCategoryByUser = async (req, res) => {
-    const { category_name: category, user: userEmail, page = 1, limit = 20 } = req.query;
+    const { category_name: category, user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", start_date, end_date } = req.query;
 
     if (!category && !userEmail) {
       return res.status(400).json({ status: 'error', message: 'Category Name and Email is required' });
@@ -193,7 +193,7 @@ function costController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await costModel.getCostsByCategoryByUser(category, userEmail, pageNum, limitNum);
+      const result = await costModel.getCostsByCategoryByUser(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
       const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
@@ -207,7 +207,7 @@ function costController() {
           totalResults: total
         })
       } else {
-        res.status(404).json({ status: 'not found', message: 'Costs not found' });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: result?.costs } });
       }
     } catch (err) {
       console.error('Error getting Cost By This Category:', err);
