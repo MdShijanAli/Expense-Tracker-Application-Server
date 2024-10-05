@@ -250,7 +250,7 @@ function fundsController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await fundsModel.getFunds(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
-      const total = result?.total;
+      const total = result?.total?.length;
       if (result?.funds?.length > 0) {
         formatResultData({
           res,
@@ -263,7 +263,7 @@ function fundsController() {
           totalResults: total
         })
       } else {
-        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: result?.funds } });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: [] } });
       }
     } catch (err) {
       console.error('Error getting Fund By Category:', err);
@@ -284,7 +284,7 @@ function fundsController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await fundsModel.getFundCategoryWithValue(userEmail, pageNum, limitNum, search);
-      const total = result?.total?.length;
+      const total = result?.total;
       if (result?.funds?.length > 0) {
         formatResultData({
           res,
@@ -297,7 +297,7 @@ function fundsController() {
           totalResults: total
         })
       } else {
-        res.status(404).json({ status: 'not found', message: 'Fund not found' });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: [] } });
       }
     } catch (err) {
       console.error('Error getting Fund By User:', err);
