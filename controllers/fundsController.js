@@ -238,7 +238,7 @@ function fundsController() {
 
 
   // Get Funds Category for Specific User
-  const getFundsByCategoryAndUser = async (req, res) => {
+  const getFunds = async (req, res) => {
 
     const { category_name: category, user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", start_date, end_date, } = req.query;
 
@@ -249,8 +249,8 @@ function fundsController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await fundsModel.getFundsByCategoryAndUser(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
-      const total = result?.total?.length;
+      const result = await fundsModel.getFunds(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
+      const total = result?.total;
       if (result?.funds?.length > 0) {
         formatResultData({
           res,
@@ -337,7 +337,7 @@ function fundsController() {
     getFundsByCategory,
     deleteFundsCategoryByUser,
     getFundsByDate,
-    getFundsByCategoryAndUser,
+    getFunds,
     getFundCategoryWithValue,
     getAYearTotalFunds
   }

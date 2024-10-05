@@ -154,7 +154,7 @@ function costModel() {
   }
 
   // Get Cost By User Email
-  const getCostsByCategoryByUser = async (category, userEmail, page = 1, limit = 20,  sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
+  const getCosts = async (category, userEmail, page = 1, limit = 20,  sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
     let collection;
     try {
       collection = await getCollection();
@@ -187,7 +187,7 @@ function costModel() {
     }
 
       const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
-      const total = await collection.find(query).toArray();
+      const total = await collection.find(query).count();
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
@@ -401,7 +401,7 @@ function costModel() {
     deleteCostByID,
     getCostsByUserEmail,
     getCostsByCategory,
-    getCostsByCategoryByUser,
+    getCosts,
     getCostCategoryWithValue,
     deleteCostCategoryByUser,
     getCostsByDate,

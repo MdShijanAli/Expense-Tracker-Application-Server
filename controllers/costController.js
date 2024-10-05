@@ -183,7 +183,7 @@ function costController() {
 
 
   // Get Costs Category By User Email
-  const getCostsByCategoryByUser = async (req, res) => {
+  const getCosts = async (req, res) => {
     const { category_name: category, user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", start_date, end_date } = req.query;
 
     if (!category && !userEmail) {
@@ -193,7 +193,7 @@ function costController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await costModel.getCostsByCategoryByUser(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
+      const result = await costModel.getCosts(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
       const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
@@ -311,7 +311,7 @@ function costController() {
     deleteCostByID,
     getCostsByUserEmail,
     getCostsByCategory,
-    getCostsByCategoryByUser,
+    getCosts,
     getCostCategoryWithValue,
     deleteCostCategoryByUser,
     getCostsByDate

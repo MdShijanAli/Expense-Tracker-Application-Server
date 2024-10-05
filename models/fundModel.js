@@ -186,7 +186,7 @@ function fundsModel() {
 
 
   // Get Fund Category for specific user
-  const getFundsByCategoryAndUser = async (category, userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
+  const getFunds = async (category, userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
     let collection;
     try {
       collection = await getCollection();
@@ -219,7 +219,7 @@ function fundsModel() {
       }
 
       const funds = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
-      const total = await collection.find(query).toArray(); // Get the total count of documents
+      const total = await collection.find(query).count(); // Get the total count of documents
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
@@ -462,7 +462,7 @@ function fundsModel() {
     getFundsByCategory,
     deleteFundsCategoryByUser,
     getFundsByDate,
-    getFundsByCategoryAndUser,
+    getFunds,
     getFundCategoryWithValue,
     getUserTotalFundAmount,
     getAMonthUserTotalFundAmount,
