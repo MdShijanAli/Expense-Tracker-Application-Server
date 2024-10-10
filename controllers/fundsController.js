@@ -284,7 +284,7 @@ function fundsController() {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const result = await fundsModel.getFundCategoryWithValue(userEmail, pageNum, limitNum, search);
-      const total = result?.total;
+      const total = result?.total?.length;
       if (result?.funds?.length > 0) {
         formatResultData({
           res,
