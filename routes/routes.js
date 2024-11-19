@@ -1,5 +1,5 @@
 const express = require('express');
-const CategoryController = require('../controllers/categoryController');
+const categoryController = require('../controllers/categoryController')();
 const fundsController = require('../controllers/fundsController')();
 const calculationController = require('../controllers/calculationController')();
 const costController = require('../controllers/costController')();
@@ -7,10 +7,10 @@ const costController = require('../controllers/costController')();
 const router = express.Router();
 
 // Categories
-router.post('/api/categories', CategoryController.createCategory);
-router.get('/api/categories', CategoryController.getAllCategories);
-router.get('/api/categories/:id', CategoryController.getCategoryByID);
-router.delete('/api/categories/:id', CategoryController.deleteCategoryByID);
+router.post('/api/categories', categoryController.createCategory);
+router.get('/api/categories', categoryController.getAllCategories);
+router.get('/api/categories/:id', categoryController.getCategoryByID);
+router.delete('/api/categories/:id', categoryController.deleteCategoryByID);
 
 // Funds
 router.post('/api/funds', fundsController.createFund);

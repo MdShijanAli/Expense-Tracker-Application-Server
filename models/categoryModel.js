@@ -37,7 +37,8 @@ function categoryModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const categories = await collection.find({}).skip(skip).limit(limit).sort({ _id: -1 }).toArray();
-      return categories;
+      const total = await collection.find({}).count();
+      return { categories, total }
     } catch (err) {
       console.log('Error', err);
     }
