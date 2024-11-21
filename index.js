@@ -12,6 +12,14 @@ app.use(express.json());
 const routes = require('./routes/routes');
 app.use('/', routes);
 
+// Middleware for handling all unmatched routes
+app.use((req, res, next) => {
+  res.status(404).json({
+    code: 404,
+    message: `Route ${req.method} ${req.originalUrl} not found`,
+  });
+});
+
 // Function to start the server after successful DB connection
 const startServer = async () => {
   try {

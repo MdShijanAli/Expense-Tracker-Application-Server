@@ -6,22 +6,49 @@ function fundsController() {
   // Post  a FUnd
   const createFund = async (req, res) => {
     const value = req.body;
+  
+    // Check if required fields are missing
+    if (!value.category || !value.money || !value.date || !value.time || !value.notes) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Missing required fields: category, amount, date, or notes.',
+      });
+    }
+  
     try {
+      // Attempt to create the fund entry
       const result = await fundsModel.createFund(value);
       const createdID = result?.insertedId;
+  
+      // If the fund is successfully created
       if (createdID) {
         const createdFund = await fundsModel.getFundByID(createdID);
-        res.json({
+        return res.json({
           status: 'success',
-          message: 'Executed Successfully',
-          results: createdFund
+          message: 'Fund created successfully',
+          results: createdFund,
         });
+      } else {
+        throw new Error('Failed to create fund');
       }
     } catch (err) {
+      // Handle specific error cases
+      if (err.message === 'Failed to create fund') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Fund creation failed. Please check the input data.',
+        });
+      }
+  
+      // Handle any other unexpected errors (e.g., database or server errors)
       console.error('Error Posting Funds:', err);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+      return res.status(500).json({
+        status: 'error',
+        message: 'Internal Server Error: Something went wrong on the server.',
+      });
     }
-  }
+  };
+  
 
   // Update a FUnd
   const updateFundByID = async (req, res) => {
