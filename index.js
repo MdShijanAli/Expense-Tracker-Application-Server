@@ -21,27 +21,18 @@ app.use((req, res, next) => {
 });
 
 // Function to start the server after successful DB connection
-const startServer = async () => {
+async function startServer() {
   try {
-    // Connect to MongoDB
-    await connectToDatabase();
+    await client.connect();
+    console.log('Connected to MongoDB');
 
-    // Start Express server
+    // Start your Express server here
     app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-    });
-
-    // Handle graceful shutdown
-    process.on('SIGINT', async () => {
-      console.log('SIGINT signal received: closing MongoDB client');
-      await client.close();
-      console.log('MongoDB client closed');
-      process.exit(0);
+      console.log(`Server is running on port ${port}`);
     });
   } catch (err) {
-    console.error('Error starting the server:', err);
-    process.exit(1);
+    console.error('Failed to connect to MongoDB', err);
   }
-};
+}
 
-startServer(); // Call the function to connect to DB and start the server
+startServer();

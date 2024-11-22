@@ -1,18 +1,11 @@
 const { client } = require("../config/database");
 const { ObjectId } = require('mongodb');
 
-async function getCollection() {
-  // Ensure that the client is connected
-  if (!client.topology || !client.topology.isConnected()) {
-    await client.connect(); // Connect only if not already connected
-  }
-
-  // Return the desired collection
-  return client.db(process.env.DB_NAME).collection("funds");
-}
-
-
 function fundsModel() {
+  const getCollection = async() => {
+    return client.db(process.env.DB_NAME).collection("funds");
+  };
+
   // Post a Fund
   const createFund = async (value) => {
     let collection;
