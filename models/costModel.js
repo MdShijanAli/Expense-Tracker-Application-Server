@@ -123,7 +123,7 @@ function costModel() {
         query.$or = [
           { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
           { money: { $regex: search, $options: 'i' } },
-          { notes: { $regex: search, $options: 'i' } }, 
+          { notes: { $regex: search, $options: 'i' } },
           { time: { $regex: search, $options: 'i' } },
           { date: { $regex: search, $options: 'i' } }
         ];
@@ -154,7 +154,7 @@ function costModel() {
   }
 
   // Get Cost By User Email
-  const getCostsByCategoryByUser = async (category, userEmail, page = 1, limit = 20,  sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
+  const getCosts = async (category, userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
     let collection;
     try {
       collection = await getCollection();
@@ -167,59 +167,82 @@ function costModel() {
         category: category,
       };
 
-       // Add date range filter only if both startDate and endDate are provided
-    if (startDate && endDate) {
-      query.date = {
-        $gte: startDate,
-        $lte: endDate
-      };
-    }
+      // Add date range filter only if both startDate and endDate are provided
+      if (startDate && endDate) {
+        query.date = {
+          $gte: startDate,
+          $lte: endDate
+        };
+      }
 
-    // Add search condition if search term is provided
-    if (search) {
-      query.$or = [
-        { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
-        { money: { $regex: search, $options: 'i' } },
-        { notes: { $regex: search, $options: 'i' } },
-        { time: { $regex: search, $options: 'i' } },
-        { date: { $regex: search, $options: 'i' } }
-      ];
-    }
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
+          { money: { $regex: search, $options: 'i' } },
+          { notes: { $regex: search, $options: 'i' } },
+          { time: { $regex: search, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } }
+        ];
+      }
 
       const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
-      const total = await collection.find(query).toArray();
+      const total = await collection.find(query).count();
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
     }
   }
 
-  const getCostCategoryWithValue = async (user, page = 1, limit = 20) => {
+  const getCostCategoryWithValue = async (user, page = 1, limit = 20, search = "") => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
 
+      // Query object
+      const query = { user: user };
+
+      // Add search condition if search term is provided
+      if (search) {
+        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        query.$or = [
+          { category: { $regex: escapedSearch, $options: 'i' } },
+        ];
+
+        // If the search term is a number, include a condition to search on money
+        const searchAsNumber = parseFloat(search);
+        if (Number.isFinite(searchAsNumber)) {
+          query.$or.push({ money: searchAsNumber });
+        }
+      }
+
       // Initial aggregation pipeline to get the total count
-      const totalPipeline = [
-        { $match: { user: user } }, // Filter documents by user
-        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
-      ];
-
-      // Aggregation pipeline with limit and skip
       const pipeline = [
-        { $match: { user: user } }, // Filter documents by user
-        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
-        { $sort: { name: 1 } }, // Sort by category name
-        { $skip: skip }, // Skip documents for pagination
-        { $limit: limit } // Limit the number of documents
+        { $match: query },
+        {
+          $facet: {
+            costs: [
+              { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
+              { $sort: { name: 1 } },
+              { $skip: skip },
+              { $limit: limit }
+            ],
+            total: [
+              { $group: { _id: "$category" } },
+              { $count: "count" }
+            ]
+          }
+        }
       ];
-      const costs = await collection.aggregate(pipeline).toArray();
-      const total = await collection.aggregate(totalPipeline).count();
 
-      return { costs, total };
+      const [result] = await collection.aggregate(pipeline).toArray();
+      return {
+        costs: result.costs,
+        total: result.total[0]?.count || 0
+      };
     } catch (err) {
-      console.log('Error', err);
+      throw new Error(`Failed to fetch cost categories: ${err.message}`);
     }
   }
 
@@ -324,7 +347,7 @@ function costModel() {
         resultData.push(totalMoney);
       }
 
-      return {resultData, total: totalCost};
+      return { resultData, total: totalCost };
     } catch (err) {
       console.log('Error', err);
     }
@@ -401,7 +424,7 @@ function costModel() {
     deleteCostByID,
     getCostsByUserEmail,
     getCostsByCategory,
-    getCostsByCategoryByUser,
+    getCosts,
     getCostCategoryWithValue,
     deleteCostCategoryByUser,
     getCostsByDate,

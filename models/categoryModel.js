@@ -1,56 +1,81 @@
-const connection = require('../config/database');
+const { client } = require("../config/database");
 const { ObjectId } = require('mongodb');
 
-class CategoryModel {
+async function getCollection() {
+  // Ensure that the client is connected
+  if (!client.topology || !client.topology.isConnected()) {
+    await client.connect(); // Connect only if not already connected
+  }
+
+  // Return the desired collection
+  return client.db(process.env.DB_NAME).collection("categories");
+}
+
+function categoryModel() {
   // Create Category
-  async createCategory(value) {
+  const createCategory = async (value) => {
+    const timestamp = new Date();  // Get the current timestamp
+
+    // Add the `created_at` and `updated_at` fields to the value object
+    value.created_at = timestamp;
+    value.updated_at = timestamp;
+
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("categories");
+      collection = await getCollection();
       const categories = await collection.insertOne(value);
-      return categories;
-    } finally {
-      await connection.close();
+      return categories
+    } catch (err) {
+      console.log('Error', err);
     }
   }
 
   // Get All Categories
-  async getAllCategories() {
+  const getAllCategories = async (page = 1, limit = 20) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("categories");
-      const categories = await collection.find({}).sort({ _id: -1 }).toArray();
-      return categories;
-    } finally {
-      await connection.close();
+      collection = await getCollection();
+      const skip = (page - 1) * limit
+      const categories = await collection.find({}).skip(skip).limit(limit).sort({ _id: -1 }).toArray();
+      const total = await collection.find({}).count();
+      return { categories, total }
+    } catch (err) {
+      console.log('Error', err);
     }
   }
 
   // Get single category by id
-  async getCategoryByID(id) {
+  const getCategoryByID = async (id) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("categories");
+      collection = await getCollection();
       const categories = await collection.findOne({ _id: new ObjectId(id) });
       return categories;
-    } finally {
-      await connection.close();
+    } catch (err) {
+      console.log('Error', err);
     }
   }
 
   // Delete single category by id
-  async deleteCategoryByID(id) {
+  const deleteCategoryByID = async (id) => {
+    let collection;
     try {
-      await connection.connect();
-      const collection = connection.db(process.env.DB_NAME).collection("categories");
+      collection = await getCollection();
       const categories = await collection.deleteOne({ _id: new ObjectId(id) });
-      return categories;
-    } finally {
-      await connection.close();
+      return categories
+    } catch (err) {
+      console.log('Error', err);
     }
   }
 
 
+  return {
+    createCategory,
+    getAllCategories,
+    getCategoryByID,
+    deleteCategoryByID
+  }
+
 }
 
-module.exports = CategoryModel;
+module.exports = categoryModel;

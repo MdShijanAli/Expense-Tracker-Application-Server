@@ -6,22 +6,67 @@ function fundsController() {
   // Post  a FUnd
   const createFund = async (req, res) => {
     const value = req.body;
+
+    // Validate data types
+    if (typeof value.money !== 'number' || isNaN(value.money)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Money must be a valid number',
+      });
+    }
+
+    // Sanitize input
+    const sanitizedValue = {
+      category: String(value.category).trim(),
+      money: Number(value.money),
+      date: String(value.date).trim(),
+      time: String(value.time).trim(),
+      notes: String(value.notes).trim(),
+    };
+
+    // Check if required fields are missing
+    if (!sanitizedValue.category || !sanitizedValue.money || !sanitizedValue.date ||
+      !sanitizedValue.time || !sanitizedValue.notes) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Missing required fields: category, amount, date, or notes.',
+      });
+    }
+
     try {
-      const result = await fundsModel.createFund(value);
+      // Attempt to create the fund entry
+      const result = await fundsModel.createFund(sanitizedValue);
       const createdID = result?.insertedId;
+
+      // If the fund is successfully created
       if (createdID) {
         const createdFund = await fundsModel.getFundByID(createdID);
-        res.json({
+        return res.json({
           status: 'success',
-          message: 'Executed Successfully',
-          results: createdFund
+          message: 'Fund created successfully',
+          results: createdFund,
         });
+      } else {
+        throw new Error('Failed to create fund');
       }
     } catch (err) {
+      // Handle specific error cases
+      if (err.message === 'Failed to create fund') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Fund creation failed. Please check the input data.',
+        });
+      }
+
+      // Handle any other unexpected errors (e.g., database or server errors)
       console.error('Error Posting Funds:', err);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+      return res.status(500).json({
+        status: 'error',
+        message: 'Internal Server Error: Something went wrong on the server.',
+      });
     }
-  }
+  };
+
 
   // Update a FUnd
   const updateFundByID = async (req, res) => {
@@ -238,7 +283,7 @@ function fundsController() {
 
 
   // Get Funds Category for Specific User
-  const getFundsByCategoryAndUser = async (req, res) => {
+  const getFunds = async (req, res) => {
 
     const { category_name: category, user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", start_date, end_date, } = req.query;
 
@@ -249,7 +294,7 @@ function fundsController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await fundsModel.getFundsByCategoryAndUser(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
+      const result = await fundsModel.getFunds(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
       const total = result?.total?.length;
       if (result?.funds?.length > 0) {
         formatResultData({
@@ -263,7 +308,7 @@ function fundsController() {
           totalResults: total
         })
       } else {
-        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: result?.funds } });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: [] } });
       }
     } catch (err) {
       console.error('Error getting Fund By Category:', err);
@@ -297,7 +342,7 @@ function fundsController() {
           totalResults: total
         })
       } else {
-        res.status(404).json({ status: 'not found', message: 'Fund not found' });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: [] } });
       }
     } catch (err) {
       console.error('Error getting Fund By User:', err);
@@ -337,7 +382,7 @@ function fundsController() {
     getFundsByCategory,
     deleteFundsCategoryByUser,
     getFundsByDate,
-    getFundsByCategoryAndUser,
+    getFunds,
     getFundCategoryWithValue,
     getAYearTotalFunds
   }

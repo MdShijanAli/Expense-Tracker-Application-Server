@@ -183,7 +183,7 @@ function costController() {
 
 
   // Get Costs Category By User Email
-  const getCostsByCategoryByUser = async (req, res) => {
+  const getCosts = async (req, res) => {
     const { category_name: category, user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", start_date, end_date } = req.query;
 
     if (!category && !userEmail) {
@@ -193,7 +193,7 @@ function costController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await costModel.getCostsByCategoryByUser(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
+      const result = await costModel.getCosts(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
       const total = result?.total;
       if (result?.costs.length > 0) {
         formatResultData({
@@ -207,7 +207,7 @@ function costController() {
           totalResults: total
         })
       } else {
-        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: result?.costs } });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: [] } });
       }
     } catch (err) {
       console.error('Error getting Cost By This Category:', err);
@@ -217,7 +217,7 @@ function costController() {
 
   // Get a user all category name and Money
   const getCostCategoryWithValue = async (req, res) => {
-    const { user: userEmail, page = 1, limit = 20 } = req.query;
+    const { user: userEmail, page = 1, limit = 20 , search = ""} = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
@@ -226,8 +226,8 @@ function costController() {
     try {
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
-      const result = await costModel.getCostCategoryWithValue(userEmail, pageNum, limitNum);
-      const total = result?.total;
+      const result = await costModel.getCostCategoryWithValue(userEmail, pageNum, limitNum, search);
+      const total = result?.total?.length;
       if (result?.costs.length > 0) {
         formatResultData({
           res,
@@ -240,7 +240,7 @@ function costController() {
           totalResults: total
         })
       } else {
-        res.status(404).json({ status: 'not found', message: 'Cost not found' });
+        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: [] } });
       }
     } catch (err) {
       console.error('Error getting Fund By User:', err);
@@ -311,7 +311,7 @@ function costController() {
     deleteCostByID,
     getCostsByUserEmail,
     getCostsByCategory,
-    getCostsByCategoryByUser,
+    getCosts,
     getCostCategoryWithValue,
     deleteCostCategoryByUser,
     getCostsByDate
