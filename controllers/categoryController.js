@@ -44,7 +44,7 @@ function categoryController() {
           result: result
         });
       } else {
-        res.status(404).json({ status: 'not found', message: 'Category not found' });
+        res.status(400).json({ status: 'error', message: 'Failed to create category' });
       }
     } catch (err) {
       console.error('Error getting Category By ID:', err);

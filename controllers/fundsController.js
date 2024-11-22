@@ -6,20 +6,38 @@ function fundsController() {
   // Post  a FUnd
   const createFund = async (req, res) => {
     const value = req.body;
-  
+
+    // Validate data types
+    if (typeof value.money !== 'number' || isNaN(value.money)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Money must be a valid number',
+      });
+    }
+
+    // Sanitize input
+    const sanitizedValue = {
+      category: String(value.category).trim(),
+      money: Number(value.money),
+      date: String(value.date).trim(),
+      time: String(value.time).trim(),
+      notes: String(value.notes).trim(),
+    };
+
     // Check if required fields are missing
-    if (!value.category || !value.money || !value.date || !value.time || !value.notes) {
+    if (!sanitizedValue.category || !sanitizedValue.money || !sanitizedValue.date ||
+      !sanitizedValue.time || !sanitizedValue.notes) {
       return res.status(400).json({
         status: 'error',
         message: 'Missing required fields: category, amount, date, or notes.',
       });
     }
-  
+
     try {
       // Attempt to create the fund entry
-      const result = await fundsModel.createFund(value);
+      const result = await fundsModel.createFund(sanitizedValue);
       const createdID = result?.insertedId;
-  
+
       // If the fund is successfully created
       if (createdID) {
         const createdFund = await fundsModel.getFundByID(createdID);
@@ -39,7 +57,7 @@ function fundsController() {
           message: 'Fund creation failed. Please check the input data.',
         });
       }
-  
+
       // Handle any other unexpected errors (e.g., database or server errors)
       console.error('Error Posting Funds:', err);
       return res.status(500).json({
@@ -48,7 +66,7 @@ function fundsController() {
       });
     }
   };
-  
+
 
   // Update a FUnd
   const updateFundByID = async (req, res) => {

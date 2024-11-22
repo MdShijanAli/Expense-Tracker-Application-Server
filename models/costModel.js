@@ -123,7 +123,7 @@ function costModel() {
         query.$or = [
           { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
           { money: { $regex: search, $options: 'i' } },
-          { notes: { $regex: search, $options: 'i' } }, 
+          { notes: { $regex: search, $options: 'i' } },
           { time: { $regex: search, $options: 'i' } },
           { date: { $regex: search, $options: 'i' } }
         ];
@@ -154,7 +154,7 @@ function costModel() {
   }
 
   // Get Cost By User Email
-  const getCosts = async (category, userEmail, page = 1, limit = 20,  sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
+  const getCosts = async (category, userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
     let collection;
     try {
       collection = await getCollection();
@@ -167,24 +167,24 @@ function costModel() {
         category: category,
       };
 
-       // Add date range filter only if both startDate and endDate are provided
-    if (startDate && endDate) {
-      query.date = {
-        $gte: startDate,
-        $lte: endDate
-      };
-    }
+      // Add date range filter only if both startDate and endDate are provided
+      if (startDate && endDate) {
+        query.date = {
+          $gte: startDate,
+          $lte: endDate
+        };
+      }
 
-    // Add search condition if search term is provided
-    if (search) {
-      query.$or = [
-        { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
-        { money: { $regex: search, $options: 'i' } },
-        { notes: { $regex: search, $options: 'i' } },
-        { time: { $regex: search, $options: 'i' } },
-        { date: { $regex: search, $options: 'i' } }
-      ];
-    }
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
+          { money: { $regex: search, $options: 'i' } },
+          { notes: { $regex: search, $options: 'i' } },
+          { time: { $regex: search, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } }
+        ];
+      }
 
       const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
       const total = await collection.find(query).count();
@@ -205,37 +205,44 @@ function costModel() {
 
       // Add search condition if search term is provided
       if (search) {
+        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         query.$or = [
-          { category: { $regex: search, $options: 'i' } },
+          { category: { $regex: escapedSearch, $options: 'i' } },
         ];
 
         // If the search term is a number, include a condition to search on money
         const searchAsNumber = parseFloat(search);
-        if (!isNaN(searchAsNumber)) {
+        if (Number.isFinite(searchAsNumber)) {
           query.$or.push({ money: searchAsNumber });
         }
       }
-      
-      // Initial aggregation pipeline to get the total count
-      const totalPipeline = [
-        { $match: query },
-        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
-      ];
 
+      // Initial aggregation pipeline to get the total count
       const pipeline = [
         { $match: query },
-        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
-        { $sort: { name: 1 } },
-        { $skip: skip },
-        { $limit: limit }
+        {
+          $facet: {
+            costs: [
+              { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
+              { $sort: { name: 1 } },
+              { $skip: skip },
+              { $limit: limit }
+            ],
+            total: [
+              { $group: { _id: "$category" } },
+              { $count: "count" }
+            ]
+          }
+        }
       ];
 
-      const costs = await collection.aggregate(pipeline).toArray();
-      const total = await collection.aggregate(totalPipeline).toArray();
-
-      return { costs, total };
+      const [result] = await collection.aggregate(pipeline).toArray();
+      return {
+        costs: result.costs,
+        total: result.total[0]?.count || 0
+      };
     } catch (err) {
-      console.log('Error', err);
+      throw new Error(`Failed to fetch cost categories: ${err.message}`);
     }
   }
 
@@ -340,7 +347,7 @@ function costModel() {
         resultData.push(totalMoney);
       }
 
-      return {resultData, total: totalCost};
+      return { resultData, total: totalCost };
     } catch (err) {
       console.log('Error', err);
     }
