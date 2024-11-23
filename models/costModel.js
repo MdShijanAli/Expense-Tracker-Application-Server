@@ -123,8 +123,6 @@ function costModel() {
         ];
       }
 
-      console.log('Query:', query); // For debugging purposes
-
       const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
       const total = await collection.find(query).count();
       return { costs, total };
@@ -199,44 +197,38 @@ function costModel() {
 
       // Add search condition if search term is provided
       if (search) {
-        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         query.$or = [
-          { category: { $regex: escapedSearch, $options: 'i' } },
+          { category: { $regex: search, $options: 'i' } },
         ];
 
         // If the search term is a number, include a condition to search on money
         const searchAsNumber = parseFloat(search);
-        if (Number.isFinite(searchAsNumber)) {
+        if (!isNaN(searchAsNumber)) {
           query.$or.push({ money: searchAsNumber });
         }
       }
 
       // Initial aggregation pipeline to get the total count
-      const pipeline = [
+      const totalPipeline = [
         { $match: query },
-        {
-          $facet: {
-            costs: [
-              { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
-              { $sort: { name: 1 } },
-              { $skip: skip },
-              { $limit: limit }
-            ],
-            total: [
-              { $group: { _id: "$category" } },
-              { $count: "count" }
-            ]
-          }
-        }
+        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
       ];
 
-      const [result] = await collection.aggregate(pipeline).toArray();
-      return {
-        costs: result.costs,
-        total: result.total[0]?.count || 0
-      };
+      // Aggregation pipeline with limit and skip
+      const pipeline = [
+        { $match: query },
+        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
+        { $sort: { name: 1 } },
+        { $skip: skip },
+        { $limit: limit }
+      ];
+
+      const costs = await collection.aggregate(pipeline).toArray();
+      const total = await collection.aggregate(totalPipeline).toArray();
+
+      return { costs, total };
     } catch (err) {
-      throw new Error(`Failed to fetch cost categories: ${err.message}`);
+      console.log('Error', err);
     }
   }
 
@@ -314,7 +306,7 @@ function costModel() {
         const formattedMonth = String(month).padStart(2, '0');
 
         const startDate = `${ year }-${ formattedMonth }-01`;
-        const endDate = `${ year }-${ formattedMonth }-31`;
+        const endDate = new Date(year, month, 0).toISOString().split('T')[0];
 
         // Aggregation pipeline to calculate total money for each month
         const pipeline = [
