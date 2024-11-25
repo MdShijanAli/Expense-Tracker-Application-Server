@@ -39,7 +39,7 @@ function categoryModel() {
   }
 
   // get user funds category
-  const getUserFundCategories = async (user, page = 1, limit = 20, search="") => {
+  const getUserFundCategories = async (user, page = 1, limit = 12, search="") => {
     let collection;
     try {
       collection = await getCollection();
@@ -49,7 +49,7 @@ function categoryModel() {
       // Add search condition if search term is provided
       if (search) {
         query.$or = [
-          { category: { $regex: search, $options: 'i' } },
+          { name: { $regex: search, $options: 'i' } },
         ];
   
         // If the search term is a number, include a condition to search on money
@@ -59,8 +59,14 @@ function categoryModel() {
         }
       }
 
+      const pipeline = [
+        { $match: query },
+        { $skip: skip },
+        { $limit: limit }
+      ];
+
       const totalCount = await collection.countDocuments(query);
-      const categories = await collection.find(query).skip(skip).limit(limit).sort({ _id: -1 }).toArray();
+      const categories = await collection.aggregate(pipeline).toArray();
       return {total: totalCount, categories}
     } catch (err) {
       console.log('Error', err);
@@ -68,7 +74,7 @@ function categoryModel() {
   }
 
   // get user costs category
-  const getUserCostCategories = async (user, page = 1, limit = 20, search="") => {
+  const getUserCostCategories = async (user, page = 1, limit = 12, search="") => {
     let collection;
     try {
       collection = await getCollection();
@@ -78,7 +84,7 @@ function categoryModel() {
       // Add search condition if search term is provided
       if (search) {
         query.$or = [
-          { category: { $regex: search, $options: 'i' } },
+          { name: { $regex: search, $options: 'i' } },
         ];
   
         // If the search term is a number, include a condition to search on money
@@ -88,8 +94,14 @@ function categoryModel() {
         }
       }
 
+      const pipeline = [
+        { $match: query },
+        { $skip: skip },
+        { $limit: limit }
+      ];
+
       const totalCount = await collection.countDocuments(query);
-      const categories = await collection.find(query).skip(skip).limit(limit).sort({ _id: -1 }).toArray();
+      const categories = await collection.aggregate(pipeline).toArray();
       return {total: totalCount, categories}
     } catch (err) {
       console.log('Error', err);

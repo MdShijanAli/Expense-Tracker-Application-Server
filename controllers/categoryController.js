@@ -2,7 +2,7 @@ const categoryModel = require('../models/categoryModel')();
 const formatResultData = require('../utils/formatResultsData');
 
 function categoryController() {
-  // Get All Categoeies
+  // Get All Categories
   const getAllCategories = async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
 
@@ -65,7 +65,7 @@ function categoryController() {
   };
 
   const getUserFundCategories = async (req, res) => {
-    const { user, page = 1, limit = 20, search = "" } = req.query;
+    const { user, page = 1, limit = 12, search = "" } = req.query;
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
   
@@ -76,8 +76,6 @@ function categoryController() {
     try {
       const result = await categoryModel.getUserFundCategories(user, pageNum, limitNum, search);
       const total = result?.total;
-
-      console.log('Result:', result);
 
       formatResultData({
         res,
@@ -95,7 +93,7 @@ function categoryController() {
   };
 
   const getUserCostCategories = async (req, res) => {
-    const { user, page = 1, limit = 20, search = "" } = req.query;
+    const { user, page = 1, limit = 12, search = "" } = req.query;
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
   
@@ -106,8 +104,6 @@ function categoryController() {
     try {
       const result = await categoryModel.getUserCostCategories(user, pageNum, limitNum, search);
       const total = result?.total;
-
-      console.log('Result:', result);
 
       formatResultData({
         res,
@@ -123,7 +119,6 @@ function categoryController() {
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   };
-  
   
 
   // Get Single Category

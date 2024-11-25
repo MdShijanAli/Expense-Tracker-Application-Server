@@ -29,10 +29,10 @@ function formatResultData({ res, total = null, limitNum = null, pageNum = null, 
     active: false
   });
 
-  /* const formatResult = result?.map((result)=> ({
+  const formatResult = result?.map((result)=> ({
     ...result,
     money: result?.money ? formatNumbersWithCommas(result?.money) : '0.00'
-  })) */
+  }))
 
   res.json({
     status: 'success',
@@ -41,7 +41,7 @@ function formatResultData({ res, total = null, limitNum = null, pageNum = null, 
       total: result?.length,
       totalResults: totalResults,
       totalAmount: result?.map((item) => item.money)?.reduce((p, n) => p + n, 0),
-      data: result,
+      data: formatResult,
       first_page_url: `${ process.env.API_URL }/api/${ apiEndPoint }?page=1&limit=${ limitNum }${ queryString ? '&' + queryString : '' }`,
       last_page_url: pageNum < totalPages ? `${ process.env.API_URL }/api/${ apiEndPoint }?page=${ totalPages }&limit=${ limitNum }${ queryString ? '&' + queryString : '' }` : null,
       prev_page_url: pageNum !== 1 ? `${ process.env.API_URL }/api/${ apiEndPoint }?page=${ pageNum - 1 }&limit=${ limitNum }${ queryString ? '&' + queryString : '' }` : null,
