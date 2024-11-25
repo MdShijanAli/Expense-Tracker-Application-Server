@@ -38,6 +38,34 @@ function categoryModel() {
     }
   }
 
+  // get user funds category
+  const getUserFundCategories = async (user, page = 1, limit = 20, search="") => {
+    let collection;
+    try {
+      collection = await getCollection();
+      const skip = (page - 1) * limit
+      const query = { user: user, type: "fund" };
+
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } },
+        ];
+  
+        // If the search term is a number, include a condition to search on money
+        const searchAsNumber = parseFloat(search);
+        if (!isNaN(searchAsNumber)) {
+          query.$or.push({ money: searchAsNumber });
+        }
+      }
+
+      const categories = await collection.find(query).skip(skip).limit(limit).sort({ _id: -1 }).toArray();
+      return categories
+    } catch (err) {
+      console.log('Error', err);
+    }
+  }
+
   // Get single category by id
   const getCategoryByID = async (id) => {
     let collection;
@@ -67,7 +95,8 @@ function categoryModel() {
     createCategory,
     getAllCategories,
     getCategoryByID,
-    deleteCategoryByID
+    deleteCategoryByID,
+    getUserFundCategories
   }
 
 }

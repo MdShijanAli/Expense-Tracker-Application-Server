@@ -41,10 +41,18 @@ function fundsController() {
       // If the fund is successfully created
       if (createdID) {
         const createdFund = await fundsModel.getFundByID(createdID);
+        console.log('Created Fund:', createdFund);
+        
         return res.json({
           status: 'success',
           message: 'Fund created successfully',
-          results: createdFund,
+          results: {
+            category: createdFund.category,
+            money: createdFund.money,
+            date: createdFund.date,
+            time: createdFund.time,
+            notes: createdFund.notes
+          },
         });
       } else {
         throw new Error('Failed to create fund');

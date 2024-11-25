@@ -31,7 +31,7 @@ function formatResultData({ res, total = null, limitNum = null, pageNum = null, 
 
   const formatResult = result?.map((result)=> ({
     ...result,
-    money: formatNumbersWithCommas(result?.money)
+    money: result?.money ? formatNumbersWithCommas(result?.money) : '0.00'
   }))
 
   res.json({

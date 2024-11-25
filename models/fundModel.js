@@ -225,29 +225,29 @@ function fundsModel() {
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit;
-
+  
       // Query object
       const query = { user: user };
-
+  
       // Add search condition if search term is provided
       if (search) {
         query.$or = [
           { category: { $regex: search, $options: 'i' } },
         ];
-
+  
         // If the search term is a number, include a condition to search on money
         const searchAsNumber = parseFloat(search);
         if (!isNaN(searchAsNumber)) {
           query.$or.push({ money: searchAsNumber });
         }
       }
-
+  
       // Initial aggregation pipeline to get the total count
       const totalPipeline = [
         { $match: query },
         { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
       ];
-
+  
       const pipeline = [
         { $match: query },
         { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
@@ -255,11 +255,14 @@ function fundsModel() {
         { $skip: skip },
         { $limit: limit }
       ];
-
+  
       // Execute both pipelines
       const funds = await collection.aggregate(pipeline).toArray();
       const total = await collection.aggregate(totalPipeline).toArray();
-
+  
+      console.log('Funds:', funds); // Debugging line
+      console.log('Total:', total); // Debugging line
+  
       // Return funds and total count
       return { funds, total };
     } catch (err) {
@@ -267,7 +270,6 @@ function fundsModel() {
       throw err; // Rethrow error to handle it in the calling function
     }
   };
-
 
   // Get Cost By User Email
   const getUserTotalFundAmount = async (userEmail) => {

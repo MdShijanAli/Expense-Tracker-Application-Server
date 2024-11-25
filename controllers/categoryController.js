@@ -30,27 +30,63 @@ function categoryController() {
   // Create Category
   const createCategory = async (req, res) => {
     const value = req.body;
-
+  
     if (!value) {
       return res.status(400).json({ status: 'error', message: 'Category Value is Required' });
     }
-
+  
     try {
+      // Insert the category into the database
       const result = await categoryModel.createCategory(value);
-      if (result) {
-        res.json({
-          status: 'success',
-          message: 'Executed Successfully',
-          result: result
-        });
+      console.log('Insert result:', result);
+  
+      // Check if the insert was successful
+      if (result?.acknowledged) {
+        // Fetch the created category by its insertedId
+        const createdCategory = await categoryModel.getCategoryByID(result.insertedId);
+  
+        // If category is found, return the full created data
+        if (createdCategory) {
+          res.json({
+            status: 'success',
+            message: 'Category created successfully',
+            result: createdCategory,
+          });
+        } else {
+          res.status(404).json({ status: 'error', message: 'Failed to retrieve created category' });
+        }
       } else {
         res.status(400).json({ status: 'error', message: 'Failed to create category' });
       }
     } catch (err) {
-      console.error('Error getting Category By ID:', err);
+      console.error('Error creating Category:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   };
+
+  const getUserFundCategories = async (req, res) => {
+    const { user, page = 1, limit = 20, search = "" } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+  
+    if (!user) {
+      return res.status(400).json({ status: 'error', message: 'User Email is required' });
+    }
+  
+    try {
+      const result = await categoryModel.getUserFundCategories(user, pageNum, limitNum, search);
+
+      console.log('Result:', result);
+      
+
+      res.json({ status: 'success', message: 'Executed Successfully', result: result });
+    } catch (err) {
+      console.error('Error getting User Fund Categories:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  };
+  
+  
 
   // Get Single Category
   const getCategoryByID = async (req, res) => {
@@ -98,7 +134,8 @@ function categoryController() {
     getAllCategories,
     createCategory,
     getCategoryByID,
-    deleteCategoryByID
+    deleteCategoryByID,
+    getUserFundCategories
   }
 }
 
