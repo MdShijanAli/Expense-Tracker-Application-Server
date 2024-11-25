@@ -59,8 +59,38 @@ function categoryModel() {
         }
       }
 
+      const totalCount = await collection.countDocuments(query);
       const categories = await collection.find(query).skip(skip).limit(limit).sort({ _id: -1 }).toArray();
-      return categories
+      return {total: totalCount, categories}
+    } catch (err) {
+      console.log('Error', err);
+    }
+  }
+
+  // get user costs category
+  const getUserCostCategories = async (user, page = 1, limit = 20, search="") => {
+    let collection;
+    try {
+      collection = await getCollection();
+      const skip = (page - 1) * limit
+      const query = { user: user, type: "cost" };
+
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } },
+        ];
+  
+        // If the search term is a number, include a condition to search on money
+        const searchAsNumber = parseFloat(search);
+        if (!isNaN(searchAsNumber)) {
+          query.$or.push({ money: searchAsNumber });
+        }
+      }
+
+      const totalCount = await collection.countDocuments(query);
+      const categories = await collection.find(query).skip(skip).limit(limit).sort({ _id: -1 }).toArray();
+      return {total: totalCount, categories}
     } catch (err) {
       console.log('Error', err);
     }
@@ -96,7 +126,8 @@ function categoryModel() {
     getAllCategories,
     getCategoryByID,
     deleteCategoryByID,
-    getUserFundCategories
+    getUserFundCategories,
+    getUserCostCategories
   }
 
 }

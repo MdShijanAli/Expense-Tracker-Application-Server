@@ -75,13 +75,51 @@ function categoryController() {
   
     try {
       const result = await categoryModel.getUserFundCategories(user, pageNum, limitNum, search);
+      const total = result?.total;
 
       console.log('Result:', result);
-      
 
-      res.json({ status: 'success', message: 'Executed Successfully', result: result });
+      formatResultData({
+        res,
+        total,
+        limitNum,
+        pageNum,
+        apiEndPoint: 'categories',
+        result: result?.categories,
+        totalResults: total
+      })
     } catch (err) {
       console.error('Error getting User Fund Categories:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  };
+
+  const getUserCostCategories = async (req, res) => {
+    const { user, page = 1, limit = 20, search = "" } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+  
+    if (!user) {
+      return res.status(400).json({ status: 'error', message: 'User Email is required' });
+    }
+  
+    try {
+      const result = await categoryModel.getUserCostCategories(user, pageNum, limitNum, search);
+      const total = result?.total;
+
+      console.log('Result:', result);
+
+      formatResultData({
+        res,
+        total,
+        limitNum,
+        pageNum,
+        apiEndPoint: 'categories',
+        result: result?.categories,
+        totalResults: total
+      })
+    } catch (err) {
+      console.error('Error getting User Cost Categories:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   };
@@ -135,7 +173,8 @@ function categoryController() {
     createCategory,
     getCategoryByID,
     deleteCategoryByID,
-    getUserFundCategories
+    getUserFundCategories,
+    getUserCostCategories
   }
 }
 
