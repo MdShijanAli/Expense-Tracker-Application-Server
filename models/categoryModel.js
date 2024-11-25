@@ -62,7 +62,8 @@ function categoryModel() {
       const pipeline = [
         { $match: query },
         { $skip: skip },
-        { $limit: limit }
+        { $limit: limit },
+        { $sort: { created_at: -1 } }
       ];
 
       const totalCount = await collection.countDocuments(query);
@@ -97,7 +98,8 @@ function categoryModel() {
       const pipeline = [
         { $match: query },
         { $skip: skip },
-        { $limit: limit }
+        { $limit: limit },
+        { $sort: { created_at: -1 } }
       ];
 
       const totalCount = await collection.countDocuments(query);
