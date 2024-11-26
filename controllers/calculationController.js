@@ -80,8 +80,13 @@ function calculationController() {
 
       const total = totalIncome + totalExpense;
 
-      const incomePercentage = Math.round(totalIncome / total * 100);
-      const expensePercentage = Math.round(totalExpense / total * 100);
+      if (total === 0) {
+        incomePercentage = 0;
+        expensePercentage = 0;
+      } else {
+        incomePercentage = Math.round((totalIncome / total) * 100);
+        expensePercentage = Math.round((totalExpense / total) * 100);
+      }
 
 
       // Combine results into an array
@@ -90,14 +95,13 @@ function calculationController() {
 
         // Format all money values
         const formattedIncome = { ...income, total: formatNumbersWithCommas(income?.total) };
-        const formattedExpense = { ...expense, total: formatNumbersWithCommas(income?.total) };
+        const formattedExpense = { ...expense, total: formatNumbersWithCommas(expense?.total) };
 
-
-        const result = { 
-          income: formattedIncome, 
-          expense: formattedExpense, 
-          incomePercentage, 
-          expensePercentage 
+        const result = {
+          income: formattedIncome,
+          expense: formattedExpense,
+          incomePercentage,
+          expensePercentage
         };
         // Log and send the response
         res.json({

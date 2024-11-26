@@ -1,5 +1,7 @@
 const categoryModel = require('../models/categoryModel')();
 const formatResultData = require('../utils/formatResultsData');
+const pageAndLimitValidation = require('../utils/pageAndLimitValidation');
+
 
 function categoryController() {
   // Get All Categories
@@ -7,8 +9,8 @@ function categoryController() {
     const { page = 1, limit = 20 } = req.query;
 
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await categoryModel.getAllCategories(pageNum, limitNum);
       const total = result?.total;
 
@@ -30,27 +32,37 @@ function categoryController() {
   // Create Category
   const createCategory = async (req, res) => {
     const value = req.body;
-  
+
     console.log('Category Value:', value);
-  
+
     if (!value.name) {
       return res.status(400).json({ status: 'error', message: 'Name Value is Required' });
     }
-  
+
+    const requiredFields = ['name', 'user', 'type']; // add other required fields
+    const missingFields = requiredFields.filter(field => !value[field]);
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: `Missing required fields: ${ missingFields.join(', ') }`
+      });
+    }
+
     try {
       // Call the model to create the category
       const result = await categoryModel.createCategory(value);
-  
+
       // Handle the case where the category already exists
       if (result.error) {
         return res.status(400).json({ status: 'error', message: result.message });
       }
-  
+
       console.log('Insert result:', result);
-  
+
       // Fetch the created category by its insertedId
       const createdCategory = await categoryModel.getCategoryByID(result.insertedId);
-  
+
       // If category is found, return the full created data
       if (createdCategory) {
         res.json({
@@ -66,17 +78,17 @@ function categoryController() {
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   };
-  
+
 
   const getUserFundCategories = async (req, res) => {
     const { user, page = 1, limit = 12, search = "" } = req.query;
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-  
+    const pageNum = pageAndLimitValidation(page);
+    const limitNum = pageAndLimitValidation(limit);
+
     if (!user) {
       return res.status(400).json({ status: 'error', message: 'User Email is required' });
     }
-  
+
     try {
       const result = await categoryModel.getUserFundCategories(user, pageNum, limitNum, search);
       const total = result?.total;
@@ -98,13 +110,13 @@ function categoryController() {
 
   const getUserCostCategories = async (req, res) => {
     const { user, page = 1, limit = 12, search = "" } = req.query;
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-  
+    const pageNum = pageAndLimitValidation(page);
+    const limitNum = pageAndLimitValidation(limit);
+
     if (!user) {
       return res.status(400).json({ status: 'error', message: 'User Email is required' });
     }
-  
+
     try {
       const result = await categoryModel.getUserCostCategories(user, pageNum, limitNum, search);
       const total = result?.total;
@@ -123,46 +135,46 @@ function categoryController() {
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   };
-  
+
 
   // Get Single Category
-// Get Single Category
-const getCategoryByID = async (req, res) => {
-  const categoryId = req.params.id;
+  // Get Single Category
+  const getCategoryByID = async (req, res) => {
+    const categoryId = req.params.id;
 
-  if (!categoryId) {
-    return res.status(400).json({ 
-      status: 'error', 
-      message: 'Category ID is required' 
-    });
-  }
-
-  try {
-    const result = await categoryModel.getCategoryByID(categoryId);
-
-    if (result) {
-      return res.json({ 
-        status: 'success', 
-        message: 'Executed Successfully', 
-        result: result 
-      });
-    } else {
-      return res.status(404).json({ 
-        status: 'not found', 
-        message: 'Category not found' 
+    if (!categoryId) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Category ID is required'
       });
     }
-  } catch (err) {
-    // Log the error for debugging purposes
-    console.error('Error getting Category By ID:', err);
 
-    // Send the error message to the client
-    return res.status(500).json({ 
-      status: 'error', 
-      message: err.message || 'Internal Server Error' 
-    });
-  }
-};
+    try {
+      const result = await categoryModel.getCategoryByID(categoryId);
+
+      if (result) {
+        return res.json({
+          status: 'success',
+          message: 'Executed Successfully',
+          result: result
+        });
+      } else {
+        return res.status(404).json({
+          status: 'not found',
+          message: 'Category not found'
+        });
+      }
+    } catch (err) {
+      // Log the error for debugging purposes
+      console.error('Error getting Category By ID:', err);
+
+      // Send the error message to the client
+      return res.status(500).json({
+        status: 'error',
+        message: err.message || 'Internal Server Error'
+      });
+    }
+  };
 
   // Delete Single Category
   const deleteCategoryByID = async (req, res) => {
