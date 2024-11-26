@@ -3,24 +3,32 @@ const { ObjectId } = require('mongodb');
 
 function userModel() {
 
-  const getCollection = async() => {
+  /**
+ * Retrieves a user by their email address
+ * @param {string} email - The email address to search for
+ * @returns {Promise<Object|null>} The user object or null if not found
+ * @throws {Error} If the email is invalid or database operation fails
+ */
+
+  const getCollection = async () => {
     return client.db(process.env.DB_NAME).collection("users");
   };
 
   // Get Cost By ID
   const getUserByEmail = async (email) => {
-    let collection;
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      throw new Error('Invalid email address');
+    }
     try {
-      collection = await getCollection();
+      const collection = await getCollection();
       const user = await collection.findOne({ email: email });
-      console.log('User', user);
-      
+
       return user
     } catch (err) {
-      console.log('Error', err);
+      console.error('Failed to fetch user:', err);
+     throw new Error('Failed to fetch user');
     }
   }
-
 
   return {
     getUserByEmail

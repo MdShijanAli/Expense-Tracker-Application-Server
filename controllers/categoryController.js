@@ -31,38 +31,42 @@ function categoryController() {
   const createCategory = async (req, res) => {
     const value = req.body;
   
-    if (!value) {
-      return res.status(400).json({ status: 'error', message: 'Category Value is Required' });
+    console.log('Category Value:', value);
+  
+    if (!value.name) {
+      return res.status(400).json({ status: 'error', message: 'Name Value is Required' });
     }
   
     try {
-      // Insert the category into the database
+      // Call the model to create the category
       const result = await categoryModel.createCategory(value);
+  
+      // Handle the case where the category already exists
+      if (result.error) {
+        return res.status(400).json({ status: 'error', message: result.message });
+      }
+  
       console.log('Insert result:', result);
   
-      // Check if the insert was successful
-      if (result?.acknowledged) {
-        // Fetch the created category by its insertedId
-        const createdCategory = await categoryModel.getCategoryByID(result.insertedId);
+      // Fetch the created category by its insertedId
+      const createdCategory = await categoryModel.getCategoryByID(result.insertedId);
   
-        // If category is found, return the full created data
-        if (createdCategory) {
-          res.json({
-            status: 'success',
-            message: 'Category created successfully',
-            result: createdCategory,
-          });
-        } else {
-          res.status(404).json({ status: 'error', message: 'Failed to retrieve created category' });
-        }
+      // If category is found, return the full created data
+      if (createdCategory) {
+        res.json({
+          status: 'success',
+          message: 'Category created successfully',
+          result: createdCategory,
+        });
       } else {
-        res.status(400).json({ status: 'error', message: 'Failed to create category' });
+        res.status(404).json({ status: 'error', message: 'Failed to retrieve created category' });
       }
     } catch (err) {
       console.error('Error creating Category:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   };
+  
 
   const getUserFundCategories = async (req, res) => {
     const { user, page = 1, limit = 12, search = "" } = req.query;
@@ -122,25 +126,43 @@ function categoryController() {
   
 
   // Get Single Category
-  const getCategoryByID = async (req, res) => {
-    const categoryId = req.params.id;
+// Get Single Category
+const getCategoryByID = async (req, res) => {
+  const categoryId = req.params.id;
 
-    if (!categoryId) {
-      return res.status(400).json({ status: 'error', message: 'Category ID is required' });
-    }
+  if (!categoryId) {
+    return res.status(400).json({ 
+      status: 'error', 
+      message: 'Category ID is required' 
+    });
+  }
 
-    try {
-      const result = await categoryModel.getCategoryByID(categoryId);
-      if (result) {
-        res.json({ status: 'success', message: 'Executed Successfully', result: result });
-      } else {
-        res.status(404).json({ status: 'not found', message: 'Category not found' });
-      }
-    } catch (err) {
-      console.error('Error getting Category By ID:', err);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+  try {
+    const result = await categoryModel.getCategoryByID(categoryId);
+
+    if (result) {
+      return res.json({ 
+        status: 'success', 
+        message: 'Executed Successfully', 
+        result: result 
+      });
+    } else {
+      return res.status(404).json({ 
+        status: 'not found', 
+        message: 'Category not found' 
+      });
     }
-  };
+  } catch (err) {
+    // Log the error for debugging purposes
+    console.error('Error getting Category By ID:', err);
+
+    // Send the error message to the client
+    return res.status(500).json({ 
+      status: 'error', 
+      message: err.message || 'Internal Server Error' 
+    });
+  }
+};
 
   // Delete Single Category
   const deleteCategoryByID = async (req, res) => {

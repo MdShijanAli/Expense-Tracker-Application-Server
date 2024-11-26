@@ -2,21 +2,35 @@ const { client } = require("../config/database");
 const { ObjectId } = require('mongodb');
 
 function categoryModel() {
-  const getCollection = async() => {
-    return client.db(process.env.DB_NAME).collection("categories");
+  const getCollection = async () => {
+    if (!process.env.DB_NAME) {
+      throw new Error('Database name not configured');
+    }
+    try {
+      return client.db(process.env.DB_NAME).collection("categories");
+    } catch (error) {
+      console.error('Failed to get categories collection:', error);
+      throw error;
+    }
   };
-  
+
   // Create Category
   const createCategory = async (value) => {
-    const timestamp = new Date();  // Get the current timestamp
+    const timestamp = new Date();
 
-    // Add the `created_at` and `updated_at` fields to the value object
     value.created_at = timestamp;
     value.updated_at = timestamp;
 
     let collection;
     try {
       collection = await getCollection();
+
+      // Check if a category with the same name already exists for this user
+      const existingCategory = await collection.findOne({ name: value.name, user: value.user });
+      if (existingCategory) {
+        return { error: true, message: "This Category name already exists for this user." };
+      }
+
       const categories = await collection.insertOne(value);
       return categories
     } catch (err) {
@@ -39,7 +53,7 @@ function categoryModel() {
   }
 
   // get user funds category
-  const getUserFundCategories = async (user, page = 1, limit = 12, search="") => {
+  const getUserFundCategories = async (user, page = 1, limit = 12, search = "") => {
     let collection;
     try {
       collection = await getCollection();
@@ -51,7 +65,7 @@ function categoryModel() {
         query.$or = [
           { name: { $regex: search, $options: 'i' } },
         ];
-  
+
         // If the search term is a number, include a condition to search on money
         const searchAsNumber = parseFloat(search);
         if (!isNaN(searchAsNumber)) {
@@ -68,14 +82,14 @@ function categoryModel() {
 
       const totalCount = await collection.countDocuments(query);
       const categories = await collection.aggregate(pipeline).toArray();
-      return {total: totalCount, categories}
+      return { total: totalCount, categories }
     } catch (err) {
       console.log('Error', err);
     }
   }
 
   // get user costs category
-  const getUserCostCategories = async (user, page = 1, limit = 12, search="") => {
+  const getUserCostCategories = async (user, page = 1, limit = 12, search = "") => {
     let collection;
     try {
       collection = await getCollection();
@@ -87,7 +101,7 @@ function categoryModel() {
         query.$or = [
           { name: { $regex: search, $options: 'i' } },
         ];
-  
+
         // If the search term is a number, include a condition to search on money
         const searchAsNumber = parseFloat(search);
         if (!isNaN(searchAsNumber)) {
@@ -104,7 +118,7 @@ function categoryModel() {
 
       const totalCount = await collection.countDocuments(query);
       const categories = await collection.aggregate(pipeline).toArray();
-      return {total: totalCount, categories}
+      return { total: totalCount, categories }
     } catch (err) {
       console.log('Error', err);
     }
@@ -112,13 +126,20 @@ function categoryModel() {
 
   // Get single category by id
   const getCategoryByID = async (id) => {
+    if (!id || typeof id !== 'string' || !ObjectId.isValid(id)) {
+      throw new Error('Invalid category ID');
+    }
     let collection;
     try {
       collection = await getCollection();
       const categories = await collection.findOne({ _id: new ObjectId(id) });
+      if (!categories) {
+        throw new Error('Category not found');
+      }
       return categories;
     } catch (err) {
-      console.log('Error', err);
+      console.error('Failed to fetch category:', err);
+      throw err;
     }
   }
 

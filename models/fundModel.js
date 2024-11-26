@@ -2,7 +2,7 @@ const { client } = require("../config/database");
 const { ObjectId } = require('mongodb');
 
 function fundsModel() {
-  const getCollection = async() => {
+  const getCollection = async () => {
     return client.db(process.env.DB_NAME).collection("funds");
   };
 
@@ -193,12 +193,12 @@ function fundsModel() {
       };
 
       // Add date range filter only if both startDate and endDate are provided
-    if (startDate && endDate) {
-      query.date = {
-        $gte: startDate,
-        $lte: endDate
-      };
-    }
+      if (startDate && endDate) {
+        query.date = {
+          $gte: startDate,
+          $lte: endDate
+        };
+      }
 
       // Add search condition if search term is provided
       if (search) {
@@ -225,29 +225,29 @@ function fundsModel() {
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit;
-  
+
       // Query object
       const query = { user: user };
-  
+
       // Add search condition if search term is provided
       if (search) {
         query.$or = [
           { category: { $regex: search, $options: 'i' } },
         ];
-  
+
         // If the search term is a number, include a condition to search on money
         const searchAsNumber = parseFloat(search);
         if (!isNaN(searchAsNumber)) {
           query.$or.push({ money: searchAsNumber });
         }
       }
-  
+
       // Initial aggregation pipeline to get the total count
       const totalPipeline = [
         { $match: query },
         { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
       ];
-  
+
       const pipeline = [
         { $match: query },
         { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
@@ -255,14 +255,14 @@ function fundsModel() {
         { $skip: skip },
         { $limit: limit }
       ];
-  
+
       // Execute both pipelines
       const funds = await collection.aggregate(pipeline).toArray();
       const total = await collection.aggregate(totalPipeline).toArray();
-  
+
       console.log('Funds:', funds); // Debugging line
       console.log('Total:', total); // Debugging line
-  
+
       // Return funds and total count
       return { funds, total };
     } catch (err) {

@@ -16,22 +16,44 @@ app.use('/', routes);
 app.use((req, res, next) => {
   res.status(404).json({
     status: 'not found',
-    message: `Route ${req.method} ${req.originalUrl} not found`,
+    message: `Route ${ req.method } ${ req.originalUrl } not found`,
   });
 });
 
 // Function to start the server after successful DB connection
 async function startServer() {
+  let retries = 3;
   try {
-    await client.connect();
+    while (retries > 0) {
+      try {
+        await client.connect();
+        break;
+      } catch (err) {
+        retries--;
+        if (retries === 0) throw err;
+        console.log(`Failed to connect. Retrying... (${ retries } attempts left)`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
+
     console.log('Connected to MongoDB');
 
     // Start your Express server here
-    app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
+    const server = app.listen(port, () => {
+      console.log(`Server is running on port ${ port }`);
+    });
+
+    // Graceful shutdown handling
+    process.on('SIGTERM', async () => {
+      console.log('SIGTERM received. Shutting down gracefully...');
+      server.close(async () => {
+        await client.close();
+        process.exit(0);
+      });
     });
   } catch (err) {
     console.error('Failed to connect to MongoDB', err);
+    process.exit(1);
   }
 }
 
