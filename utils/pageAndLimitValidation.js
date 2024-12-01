@@ -9,7 +9,7 @@ const pageAndLimitValidation = (value) => {
 
   const parsed = parseInt(value, 10);
 
-  if (isNaN(parsed)) {
+  if (Number.isNaN(parsed)) {
     throw new Error('Value must be a valid number');
   }
 

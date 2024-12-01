@@ -133,7 +133,7 @@ function costModel() {
         ];
 
         // Handle numeric search separately
-        if (!isNaN(searchAsNumber)) {
+        if (!Number.isNaN(searchAsNumber)) {
           query.$or.push({ money: searchAsNumber });
         }
       }

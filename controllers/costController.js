@@ -187,7 +187,7 @@ function costController() {
   const getCosts = async (req, res) => {
     const { category_name: category, user: userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", start_date, end_date } = req.query;
 
-    if (!category && !userEmail) {
+    if (!category || !userEmail) {
       return res.status(400).json({ status: 'error', message: 'Category Name and Email is required' });
     }
 
