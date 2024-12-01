@@ -1,3 +1,5 @@
+const formatNumbersWithCommas = require("./formatNumberWithCommas");
+
 function formatResultData({ res, total = null, limitNum = null, pageNum = null, apiEndPoint = "", queryString = "", result = [], totalResults = null }) {
   const totalPages = Math.ceil(total / limitNum);
   const links = [
@@ -27,6 +29,25 @@ function formatResultData({ res, total = null, limitNum = null, pageNum = null, 
     active: false
   });
 
+  const formatResult = Array.isArray(result) ? result.map((item) => {
+    try {
+      if (Object.hasOwn(item, 'money')) {
+        return {
+          ...item,
+          rawMoney: item.money,
+          formattedMoney: formatNumbersWithCommas(item.money)
+        };
+      }
+      return item;
+    } catch (error) {
+      console.error('Error formatting money value:', error);
+      return item;
+    }
+  }) : [];
+
+  const totalAmount = Array.isArray(result)
+    ? result.reduce((sum, item) => sum + (Number(item?.money) || 0), 0)
+    : 0;
 
   res.json({
     status: 'success',
@@ -34,8 +55,8 @@ function formatResultData({ res, total = null, limitNum = null, pageNum = null, 
     results: {
       total: result?.length,
       totalResults: totalResults,
-      totalAmount: result?.map((item) => item.money)?.reduce((p, n) => p + n, 0),
-      data: result,
+      totalAmount: formatNumbersWithCommas(totalAmount),
+      data: formatResult,
       first_page_url: `${ process.env.API_URL }/api/${ apiEndPoint }?page=1&limit=${ limitNum }${ queryString ? '&' + queryString : '' }`,
       last_page_url: pageNum < totalPages ? `${ process.env.API_URL }/api/${ apiEndPoint }?page=${ totalPages }&limit=${ limitNum }${ queryString ? '&' + queryString : '' }` : null,
       prev_page_url: pageNum !== 1 ? `${ process.env.API_URL }/api/${ apiEndPoint }?page=${ pageNum - 1 }&limit=${ limitNum }${ queryString ? '&' + queryString : '' }` : null,

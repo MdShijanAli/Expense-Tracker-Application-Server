@@ -1,12 +1,19 @@
-const connection = require("../config/database");
+const { client } = require("../config/database");
 const { ObjectId } = require('mongodb');
 
-async function getCollection() {
-  await connection.connect();
-  return connection.db(process.env.DB_NAME).collection("costs");
-}
-
 function costModel() {
+
+  const getCollection = async () => {
+    if (!process.env.DB_NAME) {
+      throw new Error('Database name not configured');
+    }
+    try {
+      return client.db(process.env.DB_NAME).collection("costs");
+    } catch (error) {
+      console.error('Failed to get collection:', error);
+      throw error;
+    }
+  };
 
   // Post a Cost
   const createCost = async (value) => {
@@ -23,8 +30,6 @@ function costModel() {
       return costs
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -37,7 +42,6 @@ function costModel() {
     let collection;
     try {
       collection = await getCollection();
-      console.log("ID", id, "Value: ", value);
       const filter = { _id: new ObjectId(id) }
 
       // Retrieve the existing document
@@ -64,8 +68,6 @@ function costModel() {
       return cost
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -76,12 +78,10 @@ function costModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const costs = await collection.find({}).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({}).toArray(); // Get the total count of documents
+      const total = await collection.find({}).countDocuments(); // Get the total count of documents
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -94,8 +94,6 @@ function costModel() {
       return cost
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -108,24 +106,43 @@ function costModel() {
       return cost
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
   // Get Cost By User Email
-  const getCostsByUserEmail = async (userEmail, page = 1, limit = 20) => {
+  const getCostsByUserEmail = async (userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "") => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
-      const costs = await collection.find({ user: userEmail }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ user: userEmail }).toArray(); // Get the total count of documents
+      const sort = {};
+      sort[sort_by] = sort_order === 'asc' ? 1 : -1;
+
+      const query = { user: userEmail };
+
+      // Add search condition if search term is provided
+      if (search) {
+        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const searchAsNumber = parseFloat(search);
+        query.$or = [
+          { category: { $regex: escapedSearch, $options: 'i' } },
+          { notes: { $regex: escapedSearch, $options: 'i' } },
+          { time: { $regex: escapedSearch, $options: 'i' } },
+          // { date: { $regex: escapedSearch, $options: 'i' } }
+          { date: { $regex: search, $options: 'i' } }
+        ];
+
+        // Handle numeric search separately
+        if (!Number.isNaN(searchAsNumber)) {
+          query.$or.push({ money: searchAsNumber });
+        }
+      }
+
+      const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).count();
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -136,62 +153,53 @@ function costModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const costs = await collection.find({ category: category }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ category: category }).toArray(); // Get the total count of documents
+      const total = await collection.find({ category: category }).count(); // Get the total count of documents
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
   // Get Cost By User Email
-  const getCostsByCategoryByUser = async (category, user, page = 1, limit = 20) => {
+  const getCosts = async (category, userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
-      const costs = await collection.find({ category: category, user: user }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ category: category, user: user }).toArray(); // Get the total count of documents
+      const sort = {};
+      sort[sort_by] = sort_order === 'asc' ? 1 : -1;
+
+      const query = {
+        user: userEmail,
+        category: category,
+      };
+
+      // Add date range filter only if both startDate and endDate are provided
+      if (startDate && endDate) {
+        query.date = {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate)
+        };
+      }
+
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
+          { money: { $regex: search, $options: 'i' } },
+          { notes: { $regex: search, $options: 'i' } },
+          { time: { $regex: search, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).count();
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
-
-  const getCostCategoryWithValue = async (user, page = 1, limit = 20) => {
-    let collection;
-    try {
-      collection = await getCollection();
-      const skip = (page - 1) * limit
-
-      // Initial aggregation pipeline to get the total count
-      const totalPipeline = [
-        { $match: { user: user } }, // Filter documents by user
-        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
-      ];
-
-      // Aggregation pipeline with limit and skip
-      const pipeline = [
-        { $match: { user: user } }, // Filter documents by user
-        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
-        { $sort: { name: 1 } }, // Sort by category name
-        { $skip: skip }, // Skip documents for pagination
-        { $limit: limit } // Limit the number of documents
-      ];
-      const costs = await collection.aggregate(pipeline).toArray();
-      const total = await collection.aggregate(totalPipeline).toArray();
-
-      return { costs, total };
-    } catch (err) {
-      console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
-    }
-  }
-
 
   // Get Costs By Date
   const getCostsByDate = async (startDate, endDate, userEmail, page = 1, limit = 20) => {
@@ -207,12 +215,10 @@ function costModel() {
         }
       };
       const costs = await collection.find(query).sort({ date: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find(query).toArray();
+      const total = await collection.find(query).count();
       return { costs, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -221,14 +227,10 @@ function costModel() {
     let collection;
     try {
       collection = await getCollection();
-      console.log('Category Model: ', category, 'User: ', user);
       const result = await collection.deleteMany({ category: category, user: user });
       return result.deletedCount; // Return the number of documents deleted
     } catch (err) {
-      console.log('Error', err);
       throw err; // Rethrow the error to be caught in the controller
-    } finally {
-      await connection.close();
     }
   }
 
@@ -253,8 +255,6 @@ function costModel() {
       return { money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -262,26 +262,20 @@ function costModel() {
     let collection;
     try {
       collection = await getCollection();
-  
-      // Define an array of month names
-      const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-      ];
-  
+
       // Array to hold results
       const resultData = [];
-  
+
+      let totalCost = 0;
+
       // Loop through all months of the specified year
       for (let month = 1; month <= 12; month++) {
         // Format the month with leading zero if necessary
         const formattedMonth = String(month).padStart(2, '0');
-        
-        const startDate = `${year}-${formattedMonth}-01`;
-        const endDate = `${year}-${formattedMonth}-31`;
-  
-        console.log("Fetching data for", startDate, endDate);
-  
+
+        const startDate = `${ year }-${ formattedMonth }-01`;
+        const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+
         // Aggregation pipeline to calculate total money for each month
         const pipeline = [
           {
@@ -295,23 +289,23 @@ function costModel() {
           }, // Filter documents by user and date range
           { $group: { _id: null, totalMoney: { $sum: "$money" } } }
         ];
-  
+
         const result = await collection.aggregate(pipeline).toArray();
-  
+
         // Extract the total money value from the result
         const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
-  
+
+        totalCost += totalMoney
+
         // Push the month and money into the resultData array
-        resultData.push({[monthNames[month - 1]]: totalMoney });
+        resultData.push(totalMoney);
       }
-  
-      return resultData;
+
+      return { resultData, total: totalCost };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
-  };  
+  };
 
   const getAMonthUserTotalCostAmount = async (userEmail, currentMonth) => {
     let collection;
@@ -350,9 +344,6 @@ function costModel() {
       const startDate = `${ year }-${ formattedMonth }-01`
       const endDate = `${ year }-${ formattedMonth }-31`
 
-      console.log("startDate", startDate);
-      console.log("endDate", endDate);
-
       // Aggregation pipeline to calculate the total money for the previous month
       const pipeline = [
         {
@@ -369,8 +360,6 @@ function costModel() {
 
       const result = await collection.aggregate(pipeline).toArray();
 
-      console.log('Result: ', result);
-
       // // Extract the total money value from the result
       const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
 
@@ -378,8 +367,6 @@ function costModel() {
       return { month: monthName, money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -391,8 +378,7 @@ function costModel() {
     deleteCostByID,
     getCostsByUserEmail,
     getCostsByCategory,
-    getCostsByCategoryByUser,
-    getCostCategoryWithValue,
+    getCosts,
     deleteCostCategoryByUser,
     getCostsByDate,
     getUserTotalCostAmount,

@@ -1,13 +1,19 @@
-const connection = require("../config/database");
+const { client } = require("../config/database");
 const { ObjectId } = require('mongodb');
 
-async function getCollection() {
-  await connection.connect();
-  return connection.db(process.env.DB_NAME).collection("funds");
-}
-
-
 function fundsModel() {
+  const getCollection = async () => {
+    if (!process.env.DB_NAME) {
+      throw new Error('Database name not configured');
+    }
+    try {
+      return client.db(process.env.DB_NAME).collection("funds");
+    } catch (error) {
+      console.error('Failed to get collection:', error);
+      throw error;
+    }
+  };
+
   // Post a Fund
   const createFund = async (value) => {
     let collection;
@@ -22,8 +28,6 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -36,7 +40,6 @@ function fundsModel() {
     value.updated_at = timestamp;
     try {
       collection = await getCollection();
-      console.log("ID", id, "Value: ", value);
       const filter = { _id: new ObjectId(id) }
 
       // Retrieve the existing document
@@ -63,8 +66,6 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -79,8 +80,6 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -93,8 +92,6 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -107,24 +104,41 @@ function fundsModel() {
       return funds
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
-  // Get Fund By User Email
-  const getFundsByUserEmail = async (userEmail, page = 1, limit = 20) => {
+  const getFundsByUserEmail = async (userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "") => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
-      const funds = await collection.find({ user: userEmail }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ user: userEmail }).toArray(); // Get the total count of documents
+      const sort = {};
+      sort[sort_by] = sort_order === 'asc' ? 1 : -1;
+
+      const query = { user: userEmail };
+
+      // Add search condition if search term is provided
+      if (search) {
+        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const searchAsNumber = parseFloat(search);
+        query.$or = [
+          { category: { $regex: escapedSearch, $options: 'i' } },
+          { notes: { $regex: escapedSearch, $options: 'i' } },
+          { time: { $regex: escapedSearch, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } }
+        ];
+
+        // Handle numeric search separately
+        if (!Number.isNaN(searchAsNumber)) {
+          query.$or.push({ money: searchAsNumber });
+        }
+      }
+
+      const funds = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).toArray();
       return { funds, total };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -139,8 +153,6 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
@@ -154,8 +166,6 @@ function fundsModel() {
     } catch (err) {
       console.log('Error', err);
       throw err; // Rethrow the error to be caught in the controller
-    } finally {
-      await connection.close();
     }
   }
 
@@ -178,58 +188,49 @@ function fundsModel() {
       return { funds, total }
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      await connection.close();
     }
   }
 
 
   // Get Fund Category for specific user
-  const getFundsByCategoryAndUser = async (category, user, page = 1, limit = 20) => {
+  const getFunds = async (category, userEmail, page = 1, limit = 20, sort_by = '_id', sort_order = 'desc', search = "", startDate, endDate) => {
     let collection;
     try {
       collection = await getCollection();
       const skip = (page - 1) * limit
-      const funds = await collection.find({ category: category, user: user }).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({ category: category, user: user }).toArray(); // Get the total count of documents
+      const sort = {};
+      sort[sort_by] = sort_order === 'asc' ? 1 : -1;
+
+      const query = {
+        user: userEmail,
+        category: category,
+      };
+
+      // Add date range filter only if both startDate and endDate are provided
+      if (startDate && endDate) {
+        query.date = {
+          $gte: startDate,
+          $lte: endDate
+        };
+      }
+
+      // Add search condition if search term is provided
+      if (search) {
+        query.$or = [
+          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
+          { money: { $regex: search, $options: 'i' } },
+          { notes: { $regex: search, $options: 'i' } },
+          { time: { $regex: search, $options: 'i' } },
+          { date: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      const funds = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
+      const total = await collection.find(query).count(); // Get the total count of documents
       return { funds, total }
     } catch (err) {
-      console.log('Error', err);
-    } finally {
-      await connection.close();
-    }
-  }
-
-
-  const getFundCategoryWithValue = async (user, page = 1, limit = 20) => {
-    let collection;
-    try {
-      collection = await getCollection();
-      const skip = (page - 1) * limit
-
-      // Initial aggregation pipeline to get the total count
-      const totalPipeline = [
-        { $match: { user: user } }, // Filter documents by user
-        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
-      ];
-
-      // Aggregation pipeline with limit and skip
-      const pipeline = [
-        { $match: { user: user } }, // Filter documents by user
-        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
-        { $sort: { name: 1 } }, // Sort by category name
-        { $skip: skip }, // Skip documents for pagination
-        { $limit: limit } // Limit the number of documents
-      ];
-
-      const funds = await collection.aggregate(pipeline).toArray();
-      const total = await collection.aggregate(totalPipeline).toArray();
-      return { funds, total };
-    } catch (err) {
-      console.error('Error:', err);
-      throw err; // Rethrow error to handle it in the calling function
-    } finally {
-      await connection.close();
+      console.error('Error in getFunds:', err);
+      throw err;
     }
   }
 
@@ -253,8 +254,6 @@ function fundsModel() {
       return { money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -295,9 +294,6 @@ function fundsModel() {
       const startDate = `${ year }-${ formattedMonth }-01`
       const endDate = `${ year }-${ formattedMonth }-31`
 
-      console.log("startDate", startDate);
-      console.log("endDate", endDate);
-
       // Aggregation pipeline to calculate the total money for the previous month
       const pipeline = [
         {
@@ -314,8 +310,6 @@ function fundsModel() {
 
       const result = await collection.aggregate(pipeline).toArray();
 
-      console.log('Result: ', result);
-
       // // Extract the total money value from the result
       const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
 
@@ -323,8 +317,6 @@ function fundsModel() {
       return { month: monthName, money: totalMoney };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
   }
 
@@ -337,63 +329,55 @@ function fundsModel() {
 
       // Calculate total money for each month
       const monthlyTotals = {};
-          
+
       // Initialize an object with the months of the current year
       const currentYearMonths = new Array(12).fill(0).map((_, index) => {
-        return `${year}-${(index + 1).toString().padStart(2, '0')}`;
+        return `${ year }-${ (index + 1).toString().padStart(2, '0') }`;
       });
-  
+
       currentYearMonths.forEach(monthYear => {
         monthlyTotals[monthYear] = 0;
       });
-  
+
       funds.forEach(entry => {
         const monthYear = entry.date.substring(0, 7); // Extracting "YYYY-MM"
         if (currentYearMonths.includes(monthYear)) {
           monthlyTotals[monthYear] += entry.money;
         }
       });
-  
+
       // Convert object to array and sort by month
       const sortedMonthlyTotals = Object.entries(monthlyTotals)
         .sort(([a], [b]) => a.localeCompare(b))
         .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
 
-      
-  
-      return sortedMonthlyTotals ;
+
+
+      return sortedMonthlyTotals;
     } catch (err) {
       console.log('Error', err);
-    } finally {
-       if (connection) await connection.close();
     }
   };
-  
+
 
   const getUserCurrentYearData = async (userEmail, year) => {
     let collection;
     try {
       collection = await getCollection();
-  
-      // Define an array of month names
-      const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-      ];
-  
+
       // Array to hold results
       const resultData = [];
-  
+
+      let totalSum = 0;
+
       // Loop through all months of the specified year
       for (let month = 1; month <= 12; month++) {
         // Format the month with leading zero if necessary
         const formattedMonth = String(month).padStart(2, '0');
-        
-        const startDate = `${year}-${formattedMonth}-01`;
-        const endDate = `${year}-${formattedMonth}-31`;
-  
-        console.log("Fetching data for", startDate, endDate);
-  
+
+        const startDate = `${ year }-${ formattedMonth }-01`;
+        const endDate = `${ year }-${ formattedMonth }-31`;
+
         // Aggregation pipeline to calculate total money for each month
         const pipeline = [
           {
@@ -407,23 +391,23 @@ function fundsModel() {
           }, // Filter documents by user and date range
           { $group: { _id: null, totalMoney: { $sum: "$money" } } }
         ];
-  
+
         const result = await collection.aggregate(pipeline).toArray();
-  
+
         // Extract the total money value from the result
         const totalMoney = result.length > 0 ? result[0].totalMoney : 0;
-  
+
+        totalSum += totalMoney
+
         // Push the month and money into the resultData array
-        resultData.push({[monthNames[month - 1]]: totalMoney });
+        resultData.push(totalMoney);
       }
-  
-      return resultData;
+
+      return { resultData, total: totalSum };
     } catch (err) {
       console.log('Error', err);
-    } finally {
-      if (connection) await connection.close();
     }
-  }; 
+  };
 
 
   return {
@@ -436,8 +420,7 @@ function fundsModel() {
     getFundsByCategory,
     deleteFundsCategoryByUser,
     getFundsByDate,
-    getFundsByCategoryAndUser,
-    getFundCategoryWithValue,
+    getFunds,
     getUserTotalFundAmount,
     getAMonthUserTotalFundAmount,
     getAYearTotalFunds,

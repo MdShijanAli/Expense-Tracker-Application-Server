@@ -1,100 +1,187 @@
-const CategoryModel = require('../models/categoryModel');
+const categoryModel = require('../models/categoryModel')();
+const formatResultData = require('../utils/formatResultsData');
+const pageAndLimitValidation = require('../utils/pageAndLimitValidation');
 
-class CategoryController {
-  // Get All Categoeies
-  async getAllCategories(req, res) {
-    const categoryModel = new CategoryModel();
+
+function categoryController() {
+  // Get All Categories
+  const getAllCategories = async (req, res) => {
+    const { page = 1, limit = 20 } = req.query;
+
     try {
-      const result = await categoryModel.getAllCategories();
-      res.json({ status: 'success', message: 'Executed Successfully', results: { total: result?.length, data: result } });
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
+      const result = await categoryModel.getAllCategories(pageNum, limitNum);
+      const total = result?.total;
+
+      formatResultData({
+        res,
+        total,
+        limitNum,
+        pageNum,
+        apiEndPoint: 'categories',
+        result: result?.categories ?? [],
+        totalResults: total
+      });
     } catch (err) {
       console.error('Error getting Categories:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
-  }
+  };
 
   // Create Category
-  async createCategory(req, res) {
-    const categoryModel = new CategoryModel();
+  const createCategory = async (req, res) => {
     const value = req.body;
 
-    if (!value) {
-      return res.status(400).json({ status: 'error', message: 'Category ID is required' });
+    if (!value.name) {
+      return res.status(400).json({ status: 'error', message: 'Name Value is Required' });
+    }
+
+    const requiredFields = ['name', 'user', 'type']; // add other required fields
+    const missingFields = requiredFields.filter(field => !value[field]);
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: `Missing required fields: ${ missingFields.join(', ') }`
+      });
     }
 
     try {
+      // Call the model to create the category
       const result = await categoryModel.createCategory(value);
-      if (result) {
-        const categoryID = result?.insertedId;
 
-        if (categoryID) {
-          try {
-            const result = await categoryModel.getCategoryByID(categoryID);
-            if (result) {
-              res.json({ status: 'success', message: 'Executed Successfully', result: result });
-            } else {
-              res.status(404).json({ status: 'not found', message: 'Category not found' });
-            }
-          } catch (err) {
-            console.error('Error getting Category By ID:', err);
-            res.status(500).json({ status: 'error', message: 'Internal Server Error' });
-          }
-        }
+      // Handle the case where the category already exists
+      if (result.error) {
+        return res.status(400).json({ status: 'error', message: result.message });
       }
 
+      console.log('Insert result:', result);
+
+      // Fetch the created category by its insertedId
+      const createdCategory = await categoryModel.getCategoryByID(result.insertedId);
+
+      // If category is found, return the full created data
+      if (createdCategory) {
+        res.json({
+          status: 'success',
+          message: 'Category created successfully',
+          result: createdCategory,
+        });
+      } else {
+        res.status(404).json({ status: 'error', message: 'Failed to retrieve created category' });
+      }
     } catch (err) {
-      console.error('Error getting Category By ID:', err);
+      console.error('Error creating Category:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
-  }
+  };
+
+
+  const handleUserCategories = async (req, res, getCategoryFn, type) => {
+      const { user, page = 1, limit = 12, search = "" } = req.query;
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
+    
+      if (!user) {
+        return res.status(400).json({ status: 'error', message: 'User Email is required' });
+      }
+    
+      try {
+        const result = await getCategoryFn(user, pageNum, limitNum, search);
+        formatResultData({
+          res,
+          total: result?.total,
+          limitNum,
+          pageNum,
+          apiEndPoint: 'categories',
+          result: result?.categories ?? [],
+          totalResults: result?.total
+        });
+      } catch (err) {
+        console.error(`Error getting User ${type} Categories:`, err);
+        res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+      }
+    };
+    
+
+  const getUserFundCategories = async (req, res) => {
+    return handleUserCategories(req, res, categoryModel.getUserFundCategories, 'Fund');
+  };
+
+  const getUserCostCategories = async (req, res) => {
+    return handleUserCategories(req, res, categoryModel.getUserCostCategories, 'Cost');
+  };
+
 
   // Get Single Category
-  async getCategoryByID(req, res) {
-    const categoryModel = new CategoryModel();
+  // Get Single Category
+  const getCategoryByID = async (req, res) => {
     const categoryId = req.params.id;
 
     if (!categoryId) {
-      return res.status(400).json({ status: 'error', message: 'Category ID is required' });
+      return res.status(400).json({
+        status: 'error',
+        message: 'Category ID is required'
+      });
     }
 
     try {
       const result = await categoryModel.getCategoryByID(categoryId);
+
       if (result) {
-        res.json({ status: 'success', message: 'Executed Successfully', result: result });
+        return res.json({
+          status: 'success',
+          message: 'Executed Successfully',
+          result: result
+        });
       } else {
-        res.status(404).json({ status: 'not found', message: 'Category not found' });
+        return res.status(404).json({
+          status: 'not found',
+          message: 'Category not found'
+        });
       }
     } catch (err) {
+      // Log the error for debugging purposes
       console.error('Error getting Category By ID:', err);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+
+      // Send the error message to the client
+      return res.status(500).json({
+        status: 'error',
+        message: err.message || 'Internal Server Error'
+      });
     }
-  }
+  };
 
   // Delete Single Category
-  async deleteCategoryByID(req, res) {
-    const categoryModel = new CategoryModel();
-    const categoryId = req.params.id;
+  const deleteCategoryByID = async (req, res) => {
+    const id = req.params.id;
 
-    if (!categoryId) {
+    if (!id) {
       return res.status(400).json({ status: 'error', message: 'Category ID is required' });
     }
 
     try {
-      const result = await categoryModel.deleteCategoryByID(categoryId);
+      const result = await categoryModel.deleteCategoryByID(id);
       if (result) {
-        res.json({ status: 'success', message: 'Executed Successfully', result: "Deleted Successfully" });
+        res.json({ status: 'success', message: 'Executed Successfully' });
       } else {
         res.status(404).json({ status: 'not found', message: 'Category not found' });
       }
     } catch (err) {
-      console.error('Error getting Category By ID:', err);
+      console.error('Error deleting Category By ID:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
+  };
+
+  return {
+    getAllCategories,
+    createCategory,
+    getCategoryByID,
+    deleteCategoryByID,
+    getUserFundCategories,
+    getUserCostCategories
   }
-
-
-
-
 }
 
-module.exports = new CategoryController();
+module.exports = categoryController;
