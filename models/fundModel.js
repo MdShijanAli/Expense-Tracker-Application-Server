@@ -3,7 +3,15 @@ const { ObjectId } = require('mongodb');
 
 function fundsModel() {
   const getCollection = async () => {
-    return client.db(process.env.DB_NAME).collection("funds");
+    if (!process.env.DB_NAME) {
+      throw new Error('Database name not configured');
+    }
+    try {
+      return client.db(process.env.DB_NAME).collection("funds");
+    } catch (error) {
+      console.error('Failed to get collection:', error);
+      throw error;
+    }
   };
 
   // Post a Fund
@@ -111,13 +119,19 @@ function fundsModel() {
 
       // Add search condition if search term is provided
       if (search) {
+        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const searchAsNumber = parseFloat(search);
         query.$or = [
-          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
-          { money: { $regex: search, $options: 'i' } },
-          { notes: { $regex: search, $options: 'i' } },
-          { time: { $regex: search, $options: 'i' } },
+          { category: { $regex: escapedSearch, $options: 'i' } },
+          { notes: { $regex: escapedSearch, $options: 'i' } },
+          { time: { $regex: escapedSearch, $options: 'i' } },
           { date: { $regex: search, $options: 'i' } }
         ];
+
+        // Handle numeric search separately
+        if (!Number.isNaN(searchAsNumber)) {
+          query.$or.push({ money: searchAsNumber });
+        }
       }
 
       const funds = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
@@ -215,61 +229,10 @@ function fundsModel() {
       const total = await collection.find(query).count(); // Get the total count of documents
       return { funds, total }
     } catch (err) {
-      console.log('Error', err);
+      console.error('Error in getFunds:', err);
+      throw err;
     }
   }
-
-
-  const getFundCategoryWithValue = async (user, page = 1, limit = 20, search = "") => {
-    let collection;
-    try {
-      collection = await getCollection();
-      const skip = (page - 1) * limit;
-
-      // Query object
-      const query = { user: user };
-
-      // Add search condition if search term is provided
-      if (search) {
-        query.$or = [
-          { category: { $regex: search, $options: 'i' } },
-        ];
-
-        // If the search term is a number, include a condition to search on money
-        const searchAsNumber = parseFloat(search);
-        if (!isNaN(searchAsNumber)) {
-          query.$or.push({ money: searchAsNumber });
-        }
-      }
-
-      // Initial aggregation pipeline to get the total count
-      const totalPipeline = [
-        { $match: query },
-        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } }
-      ];
-
-      const pipeline = [
-        { $match: query },
-        { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
-        { $sort: { name: 1 } },
-        { $skip: skip },
-        { $limit: limit }
-      ];
-
-      // Execute both pipelines
-      const funds = await collection.aggregate(pipeline).toArray();
-      const total = await collection.aggregate(totalPipeline).toArray();
-
-      console.log('Funds:', funds); // Debugging line
-      console.log('Total:', total); // Debugging line
-
-      // Return funds and total count
-      return { funds, total };
-    } catch (err) {
-      console.error('Error:', err);
-      throw err; // Rethrow error to handle it in the calling function
-    }
-  };
 
   // Get Cost By User Email
   const getUserTotalFundAmount = async (userEmail) => {
@@ -458,7 +421,6 @@ function fundsModel() {
     deleteFundsCategoryByUser,
     getFundsByDate,
     getFunds,
-    getFundCategoryWithValue,
     getUserTotalFundAmount,
     getAMonthUserTotalFundAmount,
     getAYearTotalFunds,

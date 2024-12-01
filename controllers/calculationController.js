@@ -26,7 +26,10 @@ function calculationController() {
 
       if (totalExpense && currentMonthExpense && prevMonthMonthExpense && totalIncome && currentMonthFund && prevMonthFund) {
 
-        const restFund = { money: totalIncome?.money - totalExpense?.money }
+        const incomeMoney = Number(totalIncome?.money) || 0;
+        const expenseMoney = Number(totalExpense?.money) || 0;
+        const restFund = { money: incomeMoney - expenseMoney };
+        // const restFund = { money: totalIncome?.money - totalExpense?.money }
         console.log('Rest FUnd', restFund);
 
         // Format all money values
@@ -63,7 +66,7 @@ function calculationController() {
   }
 
   const getUserCustomYearDetails = async (req, res) => {
-    const { user: userEmail, year = 2024 } = req.query;
+    const { user: userEmail, year = new Date().getFullYear() } = req.query;
 
     if (!userEmail) {
       return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
@@ -80,6 +83,7 @@ function calculationController() {
 
       const total = totalIncome + totalExpense;
 
+      let incomePercentage, expensePercentage;
       if (total === 0) {
         incomePercentage = 0;
         expensePercentage = 0;
@@ -90,7 +94,13 @@ function calculationController() {
 
 
       // Combine results into an array
-      if (income && expense) {
+      // if (income && expense) {
+        if (!income || !expense) {
+          return res.status(404).json({
+            status: 'error',
+            message: 'Income or expense data not found'
+          });
+        }
 
 
         // Format all money values
@@ -109,7 +119,7 @@ function calculationController() {
           message: 'Executed Successfully',
           result: result
         })
-      }
+      // }
     } catch (err) {
       console.error('Error getting Data By User Email:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });

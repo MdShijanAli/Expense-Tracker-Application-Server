@@ -1,4 +1,5 @@
 const formatResultData = require("../utils/formatResultsData");
+const pageAndLimitValidation = require("../utils/pageAndLimitValidation");
 
 const fundsModel = require("../models/fundModel")()
 
@@ -8,7 +9,7 @@ function fundsController() {
     const value = req.body;
 
     // Validate data types
-    if (typeof value.money !== 'number' || isNaN(value.money)) {
+    if (typeof value.money !== 'number' || Number.isNaN(value.money)) {
       return res.status(400).json({
         status: 'error',
         message: 'Money must be a valid number',
@@ -102,8 +103,8 @@ function fundsController() {
   const getAllFunds = async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await fundsModel.getAllFunds(pageNum, limitNum);
       const total = result?.total?.length;
 
@@ -113,7 +114,7 @@ function fundsController() {
         limitNum,
         pageNum,
         apiEndPoint: 'funds',
-        result: result?.funds,
+        result: result?.funds ?? [],
         totalResults: total
       })
 
@@ -175,8 +176,8 @@ function fundsController() {
     }
 
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await fundsModel.getFundsByUserEmail(userEmail, pageNum, limitNum, sort_by, sort_order, search);
       const total = result?.total?.length;
       if (result?.funds?.length > 0) {
@@ -187,7 +188,7 @@ function fundsController() {
           pageNum,
           apiEndPoint: 'funds/user-funds',
           queryString: `user=${ userEmail }`,
-          result: result?.funds,
+          result: result?.funds ?? [],
           totalResults: total
         })
       } else {
@@ -208,8 +209,8 @@ function fundsController() {
     }
 
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await fundsModel.getFundsByCategory(category, pageNum, limitNum);
       const total = result?.total?.length;
       if (result?.funds?.length > 0) {
@@ -220,7 +221,7 @@ function fundsController() {
           pageNum,
           apiEndPoint: 'funds/fund-category',
           queryString: `category_name=${ category }`,
-          result: result?.funds,
+          result: result?.funds ?? [],
           totalResults: total
         })
       } else {
@@ -265,8 +266,8 @@ function fundsController() {
     }
 
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await fundsModel.getFundsByDate(start_date, end_date, userEmail, pageNum, limitNum);
       const total = result?.total?.length;
       if (result?.funds?.length > 0) {
@@ -277,7 +278,7 @@ function fundsController() {
           pageNum,
           apiEndPoint: 'funds/date-funds',
           queryString: `start_date=${ start_date }&end_date=${ end_date }&user=${ userEmail }`,
-          result: result?.funds,
+          result: result?.funds ?? [],
           totalResults: total
         })
       } else {
@@ -300,8 +301,8 @@ function fundsController() {
     }
 
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await fundsModel.getFunds(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
       const total = result?.total?.length;
       if (result?.funds?.length > 0) {
@@ -312,7 +313,7 @@ function fundsController() {
           pageNum,
           apiEndPoint: 'funds/user-fund-category',
           queryString: `category_name=${ category }&user=${ userEmail }`,
-          result: result?.funds,
+          result: result?.funds ?? [],
           totalResults: total
         })
       } else {
@@ -320,40 +321,6 @@ function fundsController() {
       }
     } catch (err) {
       console.error('Error getting Fund By Category:', err);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
-    }
-  }
-
-  // Get a user all category name and Money
-  const getFundCategoryWithValue = async (req, res) => {
-
-    const { user: userEmail, page = 1, limit = 20, search = "" } = req.query;
-
-    if (!userEmail) {
-      return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
-    }
-
-    try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
-      const result = await fundsModel.getFundCategoryWithValue(userEmail, pageNum, limitNum, search);
-      const total = result?.total?.length;
-      if (result?.funds?.length > 0) {
-        formatResultData({
-          res,
-          total,
-          limitNum,
-          pageNum,
-          apiEndPoint: 'funds/user-all-fund-category/lists',
-          queryString: `user=${ userEmail }`,
-          result: result?.funds,
-          totalResults: total
-        })
-      } else {
-        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: [] } });
-      }
-    } catch (err) {
-      console.error('Error getting Fund By User:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   }
@@ -391,7 +358,6 @@ function fundsController() {
     deleteFundsCategoryByUser,
     getFundsByDate,
     getFunds,
-    getFundCategoryWithValue,
     getAYearTotalFunds
   }
 

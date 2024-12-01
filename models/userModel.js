@@ -11,7 +11,15 @@ function userModel() {
  */
 
   const getCollection = async () => {
-    return client.db(process.env.DB_NAME).collection("users");
+    if (!process.env.DB_NAME) {
+      throw new Error('Database name not configured');
+    }
+    try {
+      return client.db(process.env.DB_NAME).collection("users");
+    } catch (error) {
+      console.error('Failed to get collection:', error);
+      throw error;
+    }
   };
 
   // Get Cost By ID

@@ -1,5 +1,6 @@
 const userModel = require('../models/userModel')();
 const formatResultData = require('../utils/formatResultsData');
+const pageAndLimitValidation = require('../utils/pageAndLimitValidation');
 const costModel = require('./../models/costModel')();
 
 function costController() {
@@ -49,8 +50,8 @@ function costController() {
   const getAllCosts = async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await costModel.getAllCosts(pageNum, limitNum);
       const total = result?.total;
 
@@ -60,7 +61,7 @@ function costController() {
         limitNum,
         pageNum,
         apiEndPoint: 'costs',
-        result: result?.costs,
+        result: result?.costs ?? [],
         totalResults: total
       })
 
@@ -121,8 +122,8 @@ function costController() {
     }
 
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await costModel.getCostsByUserEmail(userEmail, pageNum, limitNum, sort_by, sort_order, search);
       const total = result?.total;
       if (result?.costs.length > 0) {
@@ -133,7 +134,7 @@ function costController() {
           pageNum,
           apiEndPoint: 'costs/user-costs',
           queryString: `user=${ userEmail }`,
-          result: result?.costs,
+          result: result?.costs ?? [],
           totalResults: total
         })
       } else {
@@ -157,8 +158,8 @@ function costController() {
     }
 
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await costModel.getCostsByCategory(category, pageNum, limitNum);
       const total = result?.total;
       if (result?.costs.length > 0) {
@@ -169,7 +170,7 @@ function costController() {
           pageNum,
           apiEndPoint: 'costs/cost-category',
           queryString: `category_name=${ category }`,
-          result: result?.costs,
+          result: result?.costs ?? [],
           totalResults: total
         })
       } else {
@@ -191,8 +192,8 @@ function costController() {
     }
 
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await costModel.getCosts(category, userEmail, pageNum, limitNum, sort_by, sort_order, search, start_date, end_date);
       const total = result?.total;
       if (result?.costs.length > 0) {
@@ -203,7 +204,7 @@ function costController() {
           pageNum,
           apiEndPoint: 'costs/user-cost-category',
           queryString: `category_name=${ category }&user=${ userEmail }`,
-          result: result?.costs,
+          result: result?.costs ?? [],
           totalResults: total
         })
       } else {
@@ -211,39 +212,6 @@ function costController() {
       }
     } catch (err) {
       console.error('Error getting Cost By This Category:', err);
-      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
-    }
-  }
-
-  // Get a user all category name and Money
-  const getCostCategoryWithValue = async (req, res) => {
-    const { user: userEmail, page = 1, limit = 20 , search = ""} = req.query;
-
-    if (!userEmail) {
-      return res.status(400).json({ status: 'error', message: 'User Email ID is required' });
-    }
-
-    try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
-      const result = await costModel.getCostCategoryWithValue(userEmail, pageNum, limitNum, search);
-      const total = result?.total?.length;
-      if (result?.costs.length > 0) {
-        formatResultData({
-          res,
-          total,
-          limitNum,
-          pageNum,
-          apiEndPoint: 'costs/user-all-cost-category/lists',
-          queryString: `user=${ userEmail }`,
-          result: result?.costs,
-          totalResults: total
-        })
-      } else {
-        res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: [] } });
-      }
-    } catch (err) {
-      console.error('Error getting Fund By User:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   }
@@ -279,8 +247,8 @@ function costController() {
     }
 
     try {
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = pageAndLimitValidation(page);
+      const limitNum = pageAndLimitValidation(limit);
       const result = await costModel.getCostsByDate(start_date, end_date, userEmail, pageNum, limitNum);
       const total = result?.total;
       if (result?.costs?.length > 0) {
@@ -291,7 +259,7 @@ function costController() {
           pageNum,
           apiEndPoint: 'costs/date-costs',
           queryString: `start_date=${ start_date }&end_date=${ end_date }&user=${ userEmail }`,
-          result: result?.costs,
+          result: result?.costs ?? [],
           totalResults: total
         })
       } else {
@@ -312,7 +280,6 @@ function costController() {
     getCostsByUserEmail,
     getCostsByCategory,
     getCosts,
-    getCostCategoryWithValue,
     deleteCostCategoryByUser,
     getCostsByDate
   }

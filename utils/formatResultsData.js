@@ -31,9 +31,10 @@ function formatResultData({ res, total = null, limitNum = null, pageNum = null, 
 
   const formatResult = Array.isArray(result) ? result.map((item) => {
     try {
-      if (item.hasOwnProperty('money')) {
+      if (Object.hasOwn(item, 'money')) {
         return {
           ...item,
+          rawMoney: item.money,
           formattedMoney: formatNumbersWithCommas(item.money)
         };
       }

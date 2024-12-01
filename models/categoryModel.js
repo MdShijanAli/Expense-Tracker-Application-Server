@@ -34,7 +34,8 @@ function categoryModel() {
       const categories = await collection.insertOne(value);
       return categories
     } catch (err) {
-      console.log('Error', err);
+      console.error('Failed to create category:', err);
+      throw err;
     }
   }
 
@@ -45,84 +46,67 @@ function categoryModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const categories = await collection.find({}).skip(skip).limit(limit).sort({ _id: -1 }).toArray();
-      const total = await collection.find({}).count();
+      const total = await collection.countDocuments({});
       return { categories, total }
     } catch (err) {
       console.log('Error', err);
     }
   }
 
-  // get user funds category
-  const getUserFundCategories = async (user, page = 1, limit = 12, search = "") => {
-    let collection;
-    try {
-      collection = await getCollection();
-      const skip = (page - 1) * limit
-      const query = { user: user, type: "fund" };
+  // Common function to fetch user categories by type
+const getUserCategories = async (user, type, page = 1, limit = 12, search = "") => {
+  try {
+    const collection = await getCollection();
+    page = Math.max(1, parseInt(page));
+    limit = Math.min(100, Math.max(1, parseInt(limit)));
+    const skip = (page - 1) * limit;
 
-      // Add search condition if search term is provided
-      if (search) {
-        query.$or = [
-          { name: { $regex: search, $options: 'i' } },
-        ];
+    const baseQuery = { user, type };
+    const query = buildSearchQuery(baseQuery, search);
 
-        // If the search term is a number, include a condition to search on money
-        const searchAsNumber = parseFloat(search);
-        if (!isNaN(searchAsNumber)) {
-          query.$or.push({ money: searchAsNumber });
-        }
-      }
+    const pipeline = [
+      { $match: query },
+      { $sort: { created_at: -1 } },
+      { $skip: skip },
+      { $limit: limit }
+    ];
 
-      const pipeline = [
-        { $match: query },
-        { $skip: skip },
-        { $limit: limit },
-        { $sort: { created_at: -1 } }
-      ];
+    const [totalCount, categories] = await Promise.all([
+      collection.countDocuments(query),
+      collection.aggregate(pipeline).toArray()
+    ]);
 
-      const totalCount = await collection.countDocuments(query);
-      const categories = await collection.aggregate(pipeline).toArray();
-      return { total: totalCount, categories }
-    } catch (err) {
-      console.log('Error', err);
-    }
+    return { total: totalCount, categories };
+  } catch (err) {
+    console.error(`Failed to fetch ${type} categories:`, err);
+    throw err;
+  }
+};
+
+// Utility function to build search queries
+const buildSearchQuery = (baseQuery, search) => {
+  if (!search) return baseQuery;
+
+  const query = { ...baseQuery };
+  query.$or = [
+    { name: { $regex: search, $options: "i" } }
+  ];
+
+  const searchAsNumber = parseFloat(search);
+  if (!isNaN(searchAsNumber)) {
+    query.$or.push({ money: searchAsNumber });
   }
 
-  // get user costs category
-  const getUserCostCategories = async (user, page = 1, limit = 12, search = "") => {
-    let collection;
-    try {
-      collection = await getCollection();
-      const skip = (page - 1) * limit
-      const query = { user: user, type: "cost" };
+  return query;
+};
 
-      // Add search condition if search term is provided
-      if (search) {
-        query.$or = [
-          { name: { $regex: search, $options: 'i' } },
-        ];
+// Example usage for different category types
+const getUserFundCategories = (user, page, limit, search) =>
+  getUserCategories(user, "fund", page, limit, search);
 
-        // If the search term is a number, include a condition to search on money
-        const searchAsNumber = parseFloat(search);
-        if (!isNaN(searchAsNumber)) {
-          query.$or.push({ money: searchAsNumber });
-        }
-      }
+const getUserCostCategories = (user, page, limit, search) =>
+  getUserCategories(user, "cost", page, limit, search);
 
-      const pipeline = [
-        { $match: query },
-        { $skip: skip },
-        { $limit: limit },
-        { $sort: { created_at: -1 } }
-      ];
-
-      const totalCount = await collection.countDocuments(query);
-      const categories = await collection.aggregate(pipeline).toArray();
-      return { total: totalCount, categories }
-    } catch (err) {
-      console.log('Error', err);
-    }
-  }
 
   // Get single category by id
   const getCategoryByID = async (id) => {
@@ -151,7 +135,8 @@ function categoryModel() {
       const categories = await collection.deleteOne({ _id: new ObjectId(id) });
       return categories
     } catch (err) {
-      console.log('Error', err);
+      console.error('Failed to delete category:', err);
+      throw err;
     }
   }
 
