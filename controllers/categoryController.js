@@ -1,4 +1,5 @@
 const categoryModel = require('../models/categoryModel')();
+const { ObjectId } = require('mongodb');
 const formatResultData = require('../utils/formatResultsData');
 const pageAndLimitValidation = require('../utils/pageAndLimitValidation');
 
@@ -55,11 +56,12 @@ function categoryController() {
       if (result.error) {
         return res.status(400).json({ status: 'error', message: result.message });
       }
-
-      console.log('Insert result:', result);
+      
+      const objectId = new ObjectId(result.insertedId);
+      const idString = objectId.toString();
 
       // Fetch the created category by its insertedId
-      const createdCategory = await categoryModel.getCategoryByID(result.insertedId);
+      const createdCategory = await categoryModel.getCategoryByID(idString);
 
       // If category is found, return the full created data
       if (createdCategory) {
@@ -79,31 +81,31 @@ function categoryController() {
 
 
   const handleUserCategories = async (req, res, getCategoryFn, type) => {
-      const { user, page = 1, limit = 12, search = "" } = req.query;
-      const pageNum = pageAndLimitValidation(page);
-      const limitNum = pageAndLimitValidation(limit);
-    
-      if (!user) {
-        return res.status(400).json({ status: 'error', message: 'User Email is required' });
-      }
-    
-      try {
-        const result = await getCategoryFn(user, pageNum, limitNum, search);
-        formatResultData({
-          res,
-          total: result?.total,
-          limitNum,
-          pageNum,
-          apiEndPoint: 'categories',
-          result: result?.categories ?? [],
-          totalResults: result?.total
-        });
-      } catch (err) {
-        console.error(`Error getting User ${type} Categories:`, err);
-        res.status(500).json({ status: 'error', message: 'Internal Server Error' });
-      }
-    };
-    
+    const { user, page = 1, limit = 12, search = "" } = req.query;
+    const pageNum = pageAndLimitValidation(page);
+    const limitNum = pageAndLimitValidation(limit);
+
+    if (!user) {
+      return res.status(400).json({ status: 'error', message: 'User Email is required' });
+    }
+
+    try {
+      const result = await getCategoryFn(user, pageNum, limitNum, search);
+      formatResultData({
+        res,
+        total: result?.total,
+        limitNum,
+        pageNum,
+        apiEndPoint: 'categories',
+        result: result?.categories ?? [],
+        totalResults: result?.total
+      });
+    } catch (err) {
+      console.error(`Error getting User ${ type } Categories:`, err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  };
+
 
   const getUserFundCategories = async (req, res) => {
     return handleUserCategories(req, res, categoryModel.getUserFundCategories, 'Fund');

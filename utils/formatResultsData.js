@@ -34,8 +34,7 @@ function formatResultData({ res, total = null, limitNum = null, pageNum = null, 
       if (Object.hasOwn(item, 'money')) {
         return {
           ...item,
-          rawMoney: item.money,
-          formattedMoney: formatNumbersWithCommas(item.money)
+          money: formatNumbersWithCommas(item.money)
         };
       }
       return item;
