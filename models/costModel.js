@@ -1,17 +1,19 @@
 const { client } = require("../config/database");
 const { ObjectId } = require('mongodb');
 
-async function getCollection() {
-  // Ensure that the client is connected
-  if (!client.topology || !client.topology.isConnected()) {
-    await client.connect(); // Connect only if not already connected
-  }
-
-  // Return the desired collection
-  return client.db(process.env.DB_NAME).collection("costs");
-}
-
 function costModel() {
+
+  const getCollection = async () => {
+    if (!process.env.DB_NAME) {
+      throw new Error('Database name not configured');
+    }
+    try {
+      return client.db(process.env.DB_NAME).collection("costs");
+    } catch (error) {
+      console.error('Failed to get collection:', error);
+      throw error;
+    }
+  };
 
   // Post a Cost
   const createCost = async (value) => {
@@ -76,7 +78,7 @@ function costModel() {
       collection = await getCollection();
       const skip = (page - 1) * limit
       const costs = await collection.find({}).sort({ _id: -1 }).skip(skip).limit(limit).toArray();
-      const total = await collection.find({}).count(); // Get the total count of documents
+      const total = await collection.find({}).countDocuments(); // Get the total count of documents
       return { costs, total };
     } catch (err) {
       console.log('Error', err);
@@ -120,16 +122,21 @@ function costModel() {
 
       // Add search condition if search term is provided
       if (search) {
+        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const searchAsNumber = parseFloat(search);
         query.$or = [
-          { category: { $regex: search, $options: 'i' } }, // Case-insensitive search in 'description'
-          { money: { $regex: search, $options: 'i' } },
-          { notes: { $regex: search, $options: 'i' } },
-          { time: { $regex: search, $options: 'i' } },
+          { category: { $regex: escapedSearch, $options: 'i' } },
+          { notes: { $regex: escapedSearch, $options: 'i' } },
+          { time: { $regex: escapedSearch, $options: 'i' } },
+          // { date: { $regex: escapedSearch, $options: 'i' } }
           { date: { $regex: search, $options: 'i' } }
         ];
-      }
 
-      console.log('Query:', query); // For debugging purposes
+        // Handle numeric search separately
+        if (!Number.isNaN(searchAsNumber)) {
+          query.$or.push({ money: searchAsNumber });
+        }
+      }
 
       const costs = await collection.find(query).sort(sort).skip(skip).limit(limit).toArray();
       const total = await collection.find(query).count();
@@ -170,8 +177,8 @@ function costModel() {
       // Add date range filter only if both startDate and endDate are provided
       if (startDate && endDate) {
         query.date = {
-          $gte: startDate,
-          $lte: endDate
+          $gte: new Date(startDate),
+          $lte: new Date(endDate)
         };
       }
 
@@ -193,59 +200,6 @@ function costModel() {
       console.log('Error', err);
     }
   }
-
-  const getCostCategoryWithValue = async (user, page = 1, limit = 20, search = "") => {
-    let collection;
-    try {
-      collection = await getCollection();
-      const skip = (page - 1) * limit
-
-      // Query object
-      const query = { user: user };
-
-      // Add search condition if search term is provided
-      if (search) {
-        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        query.$or = [
-          { category: { $regex: escapedSearch, $options: 'i' } },
-        ];
-
-        // If the search term is a number, include a condition to search on money
-        const searchAsNumber = parseFloat(search);
-        if (Number.isFinite(searchAsNumber)) {
-          query.$or.push({ money: searchAsNumber });
-        }
-      }
-
-      // Initial aggregation pipeline to get the total count
-      const pipeline = [
-        { $match: query },
-        {
-          $facet: {
-            costs: [
-              { $group: { _id: "$category", name: { $first: "$category" }, money: { $sum: "$money" } } },
-              { $sort: { name: 1 } },
-              { $skip: skip },
-              { $limit: limit }
-            ],
-            total: [
-              { $group: { _id: "$category" } },
-              { $count: "count" }
-            ]
-          }
-        }
-      ];
-
-      const [result] = await collection.aggregate(pipeline).toArray();
-      return {
-        costs: result.costs,
-        total: result.total[0]?.count || 0
-      };
-    } catch (err) {
-      throw new Error(`Failed to fetch cost categories: ${err.message}`);
-    }
-  }
-
 
   // Get Costs By Date
   const getCostsByDate = async (startDate, endDate, userEmail, page = 1, limit = 20) => {
@@ -320,7 +274,7 @@ function costModel() {
         const formattedMonth = String(month).padStart(2, '0');
 
         const startDate = `${ year }-${ formattedMonth }-01`;
-        const endDate = `${ year }-${ formattedMonth }-31`;
+        const endDate = new Date(year, month, 0).toISOString().split('T')[0];
 
         // Aggregation pipeline to calculate total money for each month
         const pipeline = [
@@ -425,7 +379,6 @@ function costModel() {
     getCostsByUserEmail,
     getCostsByCategory,
     getCosts,
-    getCostCategoryWithValue,
     deleteCostCategoryByUser,
     getCostsByDate,
     getUserTotalCostAmount,

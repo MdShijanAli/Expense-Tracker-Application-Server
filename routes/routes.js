@@ -9,6 +9,8 @@ const router = express.Router();
 // Categories
 router.post('/api/categories', categoryController.createCategory);
 router.get('/api/categories', categoryController.getAllCategories);
+router.get('/api/categories/user-fund-categories', categoryController.getUserFundCategories);
+router.get('/api/categories/user-cost-categories', categoryController.getUserCostCategories);
 router.get('/api/categories/:id', categoryController.getCategoryByID);
 router.delete('/api/categories/:id', categoryController.deleteCategoryByID);
 
@@ -21,7 +23,6 @@ router.get('/api/funds/details/:id', fundsController.getFundByID);
 router.get('/api/funds/user-funds', fundsController.getFundsByUserEmail);
 router.get('/api/funds/fund-category', fundsController.getFundsByCategory);
 router.get('/api/funds/date-funds', fundsController.getFundsByDate);
-router.get('/api/funds/user-all-fund-category/lists', fundsController.getFundCategoryWithValue);
 router.get('/api/funds/user-year-fund', fundsController.getAYearTotalFunds);
 router.delete('/api/funds/delete', fundsController.deleteFundByID);
 router.delete('/api/funds/delete-user-category', fundsController.deleteFundsCategoryByUser);
@@ -35,7 +36,6 @@ router.get('/api/costs/details/:id', costController.getCostByID);
 router.get('/api/costs/user-costs', costController.getCostsByUserEmail);
 router.get('/api/costs/date-costs', costController.getCostsByDate);
 router.get('/api/costs/cost-category', costController.getCostsByCategory);
-router.get('/api/costs/user-all-cost-category/lists', costController.getCostCategoryWithValue);
 router.delete('/api/costs/delete', costController.deleteCostByID);
 router.delete('/api/costs/delete-user-category', costController.deleteCostCategoryByUser);
 

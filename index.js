@@ -16,32 +16,45 @@ app.use('/', routes);
 app.use((req, res, next) => {
   res.status(404).json({
     status: 'not found',
-    message: `Route ${req.method} ${req.originalUrl} not found`,
+    message: `Route ${ req.method } ${ req.originalUrl } not found`,
   });
 });
 
 // Function to start the server after successful DB connection
-const startServer = async () => {
+async function startServer() {
+  let retries = 3;
   try {
-    // Connect to MongoDB
-    await connectToDatabase();
+    while (retries > 0) {
+      try {
+        await client.connect();
+        break;
+      } catch (err) {
+        retries--;
+        if (retries === 0) throw err;
+        console.log(`Failed to connect. Retrying... (${ retries } attempts left)`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
 
-    // Start Express server
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
+    console.log('Connected to MongoDB');
+
+    // Start your Express server here
+    const server = app.listen(port, () => {
+      console.log(`Server is running on port ${ port }`);
     });
 
-    // Handle graceful shutdown
-    process.on('SIGINT', async () => {
-      console.log('SIGINT signal received: closing MongoDB client');
-      await client.close();
-      console.log('MongoDB client closed');
-      process.exit(0);
+    // Graceful shutdown handling
+    process.on('SIGTERM', async () => {
+      console.log('SIGTERM received. Shutting down gracefully...');
+      server.close(async () => {
+        await client.close();
+        process.exit(0);
+      });
     });
   } catch (err) {
-    console.error('Error starting the server:', err);
+    console.error('Failed to connect to MongoDB', err);
     process.exit(1);
   }
-};
+}
 
-startServer(); // Call the function to connect to DB and start the server
+startServer();
