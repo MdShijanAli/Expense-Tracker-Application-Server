@@ -8,6 +8,7 @@ const router = express.Router();
 
 // Categories
 router.post('/api/categories', categoryController.createCategory);
+router.put('/api/categories/update/:id', categoryController.updateCategory);
 router.get('/api/categories', categoryController.getAllCategories);
 router.get('/api/categories/user-fund-categories', categoryController.getUserFundCategories);
 router.get('/api/categories/user-cost-categories', categoryController.getUserCostCategories);

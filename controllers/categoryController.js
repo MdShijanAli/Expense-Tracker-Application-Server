@@ -56,7 +56,7 @@ function categoryController() {
       if (result.error) {
         return res.status(400).json({ status: 'error', message: result.message });
       }
-      
+
       const objectId = new ObjectId(result.insertedId);
       const idString = objectId.toString();
 
@@ -75,6 +75,36 @@ function categoryController() {
       }
     } catch (err) {
       console.error('Error creating Category:', err);
+      res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+    }
+  };
+
+  const updateCategory = async (req, res) => {
+    const { id } = req.params;
+    const value = req.body;
+
+    if (!id || typeof id !== 'string' || !ObjectId.isValid(id)) {
+      return res.status(400).json({ status: 'error', message: 'Invalid category ID' });
+    }
+
+    try {
+      // Call the model to update the category
+      const result = await categoryModel.updateCategory(id, value);
+
+      // Handle the case where the category is not found
+      if (result.modifiedCount === 0) {
+        return res.status(404).json({ status: 'error', message: 'Category not found' });
+      }
+
+      const updatedCategory = await categoryModel.getCategoryByID(id);
+
+      if (!updatedCategory) {
+        return res.status(404).json({ status: 'error', message: 'Category not found' });
+      }
+
+      res.json({ status: 'success', message: 'Category updated successfully', result: updatedCategory });
+    } catch (err) {
+      console.error('Error updating Category:', err);
       res.status(500).json({ status: 'error', message: 'Internal Server Error' });
     }
   };
@@ -182,6 +212,7 @@ function categoryController() {
     getCategoryByID,
     deleteCategoryByID,
     getUserFundCategories,
+    updateCategory,
     getUserCostCategories
   }
 }

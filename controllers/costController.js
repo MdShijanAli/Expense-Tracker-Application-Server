@@ -138,10 +138,10 @@ function costController() {
           totalResults: total
         })
       } else {
-/*         const userExists = await userModel.getUserByEmail(userEmail);
-        if (!userExists) {
-          return res.status(404).json({ status: 'error', message: 'User does not exist' });
-        } */
+        /*         const userExists = await userModel.getUserByEmail(userEmail);
+                if (!userExists) {
+                  return res.status(404).json({ status: 'error', message: 'User does not exist' });
+                } */
         res.status(200).json({ status: 'success', message: 'Executed Successfully', results: { data: result?.costs } });
       }
     } catch (err) {
