@@ -1,6 +1,8 @@
 const userModel = require('../models/userModel')();
+const categoryModel = require('../models/categoryModel')();
 const formatResultData = require('../utils/formatResultsData');
 const pageAndLimitValidation = require('../utils/pageAndLimitValidation');
+const unFormatNumbers = require('../utils/unFormatNumbers');
 const costModel = require('./../models/costModel')();
 
 function costController() {
@@ -13,6 +15,17 @@ function costController() {
       const createdID = result?.insertedId;
       if (createdID) {
         const createdCost = await costModel.getCostByID(createdID);
+ 
+        const getCategory = await categoryModel.getCategoryByID(createdCost.category_id);
+
+        if (getCategory) {
+          const value = {
+            money: Number(getCategory.money) + createdCost.money,
+          }
+          const updateMoney = await categoryModel.updateCategory(createdCost.category_id, value);
+        }
+        
+
         res.json({
           status: 'success',
           message: 'Executed Successfully',
